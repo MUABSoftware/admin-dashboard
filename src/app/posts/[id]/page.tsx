@@ -14,11 +14,18 @@ const AdminPostDetails = () => {
   const [mediaPage, setMediaPage] = useState(1); // Track the current page of media
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   const theme = useTheme();
   const { id } = useParams();
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
     request
       .get(`/posts/${id}`)
       .then((res) => {
@@ -29,7 +36,7 @@ const AdminPostDetails = () => {
         setError("Failed to load post details. Please try again." + err.message);
         setLoading(false);
       });
-  }, [id]);
+  }, [id, isMounted]);
 
   const loadMoreMedia = () => {
     setMediaPage(mediaPage + 1);

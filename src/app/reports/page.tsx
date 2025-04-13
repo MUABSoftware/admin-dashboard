@@ -43,6 +43,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@src/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation";
 
 interface Report {
   id: string;
@@ -141,6 +142,8 @@ export default function AdminReports() {
 
   const PAGE_SIZE = 10;
 
+  const router = useRouter();
+
   useEffect(() => {
     fetchReports(selectedStatus);
   }, [page, selectedStatus]);
@@ -200,11 +203,11 @@ export default function AdminReports() {
   }, [activeTab]);
 
   const handleViewReportDetails = (reportId: string) => {
-    window.location.href = `/reports/${reportId}`;
+    router.push(`/reports/${reportId}`);
   };
 
   const handleViewUserProfile = (userId: string) => {
-    window.location.href = `/users/${userId}`;
+    router.push(`/users/${userId}`);
   };
 
   const handleDeletePost = (reportId: string) => {

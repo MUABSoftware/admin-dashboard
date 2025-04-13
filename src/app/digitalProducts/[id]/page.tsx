@@ -135,6 +135,8 @@ export default function DigitalProductView() {
   };
 
   const openMediaDialog = (type: string, url: string, title: string) => {
+    if (typeof window === 'undefined') return;
+    
     const dialog = document.createElement('dialog');
     dialog.innerHTML = `
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
