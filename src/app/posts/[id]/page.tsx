@@ -2,9 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { Avatar, Box, Button, CardMedia, CircularProgress, Divider, Grid, Modal, Paper, Stack, Tab, Tabs, Typography, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import Chart from "react-apexcharts";
+// import Chart from "react-apexcharts";
 import request from "@src/config/axios";
 import { useParams } from "next/navigation";
+
+import dynamic from "next/dynamic";
+
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const AdminPostDetails = () => {
   const [post, setPost] = useState<any>(null);
