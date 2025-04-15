@@ -1,26 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
-  Card,
-  Table as MuiTable,
-  TableBody as MuiTableBody,
-  TableCell as MuiTableCell,
-  TableContainer,
-  TableHead as MuiTableHead,
-  TableRow as MuiTableRow,
-  Typography,
-  IconButton,
-  Tooltip,
-  Pagination,
   CircularProgress,
-  Chip,
+  Pagination,
 } from "@mui/material";
-import { CheckCircle, HourglassEmpty, ErrorOutline } from "@mui/icons-material";
 import request from "@src/config/axios";
 import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -126,16 +113,12 @@ export default function AdminReports() {
         }
       });
       
-      console.log("Raw API Response:", response.data);
-      
       if (response.data) {
         const reportsData = response.data.reports || [];
-        console.log("Processed Reports:", reportsData);
         setReports(reportsData);
         setTotalPages(response.data.totalPages || 1);
       }
     } catch (error: any) {
-      console.error("Error fetching reports:", error);
       setReports([]);
       setTotalPages(1);
     } finally {
@@ -148,7 +131,7 @@ export default function AdminReports() {
       await request.put(`/reports/posts/${postId}`, { status });
       fetchReports();
     } catch (error) {
-      console.error("Error updating status:", error);
+      // Error handling kept for functionality
     }
   };
 
@@ -165,23 +148,23 @@ export default function AdminReports() {
   };
 
   const handleDeletePost = (reportId: string) => {
-    console.log("Deleting post for report:", reportId);
+    // Implementation pending
   };
 
   const handleRestrictUser = (reportId: string) => {
-    console.log("Restricting user for report:", reportId);
+    // Implementation pending
   };
 
   const handleBlockUser = (reportId: string) => {
-    console.log("Blocking user for report:", reportId);
+    // Implementation pending
   };
 
   const handleStopProduct = (reportId: string) => {
-    console.log("Stopping product for report:", reportId);
+    // Implementation pending
   };
 
   const handleDeleteComment = (commentId: string) => {
-    console.log("Deleting comment:", commentId);
+    // Implementation pending
   };
 
   const handleTabChange = (value: string) => {
