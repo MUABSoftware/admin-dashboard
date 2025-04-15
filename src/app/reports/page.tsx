@@ -41,59 +41,28 @@ import {
 } from "@src/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation";
 
-interface Report {
-  id: string;
-  reportedItemId: string;
-  reportedItemType: "profile" | "post" | "digital_product" | "comment";
-  title: string;
-  reportedBy: string[];
-  reason: string[];
+interface ReportEntry {
+  reportedById: string;
+  reporterName: string;
   status: "pending" | "in_progress" | "resolved";
-  date: string;
-  totalReports: number;
-  comment?: {
-    content: string;
-  };
+  createdAt: string;
 }
 
-// Mock data - grouped by reported item ID
-// const mockReports: Report[] = [
-//   {
-//     id: "1",
-//     reportedItemId: "post-123",
-//     reportedItemType: "post",
-//     title: "Inappropriate marketing post",
-//     reportedBy: ["user123", "user456", "user789"],
-//     reason: ["Spam", "Misleading", "Harassment"],
-//     status: "pending",
-//     date: "2025-04-08",
-//     totalReports: 3,
-//   },
-//   {
-//     id: "2",
-//     reportedItemId: "profile-456",
-//     reportedItemType: "profile",
-//     title: "JaneDoe",
-//     reportedBy: ["user222", "user333"],
-//     reason: ["Fake Account", "Impersonation"],
-//     status: "in_progress",
-//     date: "2025-04-07",
-//     totalReports: 2,
-//   },
-//   {
-//     id: "3",
-//     reportedItemId: "digital_product-789",
-//     reportedItemType: "digital_product",
-//     title: "Misleading Course Bundle",
-//     reportedBy: ["user444", "user555", "user666", "user777"],
-//     reason: ["Copyright", "Misleading", "Scam", "Duplicate"],
-//     status: "resolved",
-//     date: "2025-04-06",
-//     totalReports: 4,
-//   },
-// ];
+interface Resource {
+  _id: string;
+  title: string;
+}
 
-const getStatusColor = (status: Report["status"]) => {
+interface Report {
+  totalReports: number;
+  latestReportDate: string;
+  reports: ReportEntry[];
+  resource: Resource;
+  type: "profile" | "post" | "digital_product" | "comment";
+  resourceId: string;
+}
+
+const getStatusColor = (status: Report["reports"][0]["status"]) => {
   switch (status) {
     case "pending":
       return "bg-yellow-100 text-yellow-800";
@@ -106,7 +75,7 @@ const getStatusColor = (status: Report["status"]) => {
   }
 };
 
-const getTypeIcon = (type: Report["reportedItemType"]) => {
+const getTypeIcon = (type: Report["type"]) => {
   switch (type) {
     case "profile":
       return <User className="h-4 w-4 mr-1" />;
@@ -118,7 +87,7 @@ const getTypeIcon = (type: Report["reportedItemType"]) => {
   }
 };
 
-const getTypeLabel = (type: Report["reportedItemType"]) => {
+const getTypeLabel = (type: Report["type"]) => {
   switch (type) {
     case "profile":
       return "Profile";
@@ -150,12 +119,25 @@ export default function AdminReports() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const statusParam = selectedStatus === "all" ? "" : `&status=${selectedStatus}`;
-      const response = await request.get(`/reports?page=${page}&limit=${PAGE_SIZE}${statusParam}`);
-      setReports(response.data.reports);
-      setTotalPages(response.data.totalPages);
-    } catch (error) {
+      const response = await request.get(`/reports/posts?page=${page}&limit=${PAGE_SIZE}&status=${selectedStatus}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log("Raw API Response:", response.data);
+      
+      if (response.data) {
+        const reportsData = response.data.reports || [];
+        console.log("Processed Reports:", reportsData);
+        setReports(reportsData);
+        setTotalPages(response.data.totalPages || 1);
+      }
+    } catch (error: any) {
       console.error("Error fetching reports:", error);
+      setReports([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -202,6 +184,14 @@ export default function AdminReports() {
     console.log("Deleting comment:", commentId);
   };
 
+  const handleTabChange = (value: string) => {
+    if (value === activeTab) return;
+    
+    setActiveTab(value);
+    setPage(1);
+    setSelectedStatus(value === "all" ? "" : value);
+  };
+
   return (
     <Box>
       <div className="container mx-auto p-6">
@@ -214,8 +204,13 @@ export default function AdminReports() {
           </div>
         </div>
 
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
+        <Tabs 
+          defaultValue="pending" 
+          value={activeTab} 
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
+          <TabsList className="mb-4 w-full justify-start">
             <TabsTrigger 
               value="all" 
               className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
@@ -242,129 +237,170 @@ export default function AdminReports() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="mt-0">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Title/Username</TableHead>
-                    <TableHead>Total Reports</TableHead>
-                    <TableHead>Reported By</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reports.map((report: any) => (
-                    <TableRow key={report.id}>
-                      <TableCell>{formatDistanceToNow(new Date(report.date), { addSuffix: true })}</TableCell>
-                      <TableCell>
-                        <div 
-                          className="flex items-center cursor-pointer hover:text-primary"
-                          onClick={() => handleViewReportDetails(report.id)}
-                        >
-                          {getTypeIcon(report.reportedItemType)}
-                          {getTypeLabel(report.reportedItemType)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span 
-                          className="cursor-pointer hover:text-primary hover:underline"
-                          onClick={() => handleViewReportDetails(report.id)}
-                        >
-                          {report.title}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge>{report.totalReports}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {report.reportedBy?.slice(0, 2).map((user: string, index: number) => (
-                            <span 
-                              key={index}
-                              className="cursor-pointer hover:text-primary hover:underline"
-                              onClick={() => handleViewUserProfile(user)}
+          <div className="relative">
+            <TabsContent value={activeTab} className="mt-0">
+              {loading ? (
+                <div className="flex justify-center items-center p-8">
+                  <CircularProgress />
+                </div>
+              ) : reports.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center border rounded-md bg-gray-50">
+                  <div className="mb-3">
+                    <Flag className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No Reports Found</h3>
+                  <p className="text-sm text-gray-500">
+                    {selectedStatus === "" 
+                      ? "There are no reports available at this time."
+                      : `There are no ${selectedStatus.replace("_", " ")} reports at this time.`
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Title/Username</TableHead>
+                        <TableHead>Total Reports</TableHead>
+                        <TableHead>Reported By</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reports.map((report: Report) => (
+                        <TableRow key={report.resourceId}>
+                          <TableCell>
+                            {report.latestReportDate ? 
+                              formatDistanceToNow(new Date(report.latestReportDate), { addSuffix: true }) :
+                              'N/A'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div 
+                              className="flex items-center cursor-pointer hover:text-primary"
+                              onClick={() => handleViewReportDetails(report.resourceId)}
                             >
-                              {user}
+                              {getTypeIcon(report.type)}
+                              {getTypeLabel(report.type)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span 
+                              className="cursor-pointer hover:text-primary hover:underline"
+                              onClick={() => handleViewReportDetails(report.resourceId)}
+                            >
+                              {report.resource?.title || 'Untitled'}
                             </span>
-                          ))}
-                          {report.reportedBy?.length > 2 && (
-                            <span className="text-muted-foreground">
-                              +{report.reportedBy.length - 2} more
+                          </TableCell>
+                          <TableCell>
+                            <Badge>{report.totalReports || 0}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {(report.reports || []).slice(0, 2).map((entry: ReportEntry, index: number) => (
+                                <span 
+                                  key={index}
+                                  className="cursor-pointer hover:text-primary hover:underline"
+                                  onClick={() => handleViewUserProfile(entry.reportedById)}
+                                >
+                                  {entry.reporterName || 'Anonymous'}
+                                </span>
+                              ))}
+                              {(report.reports || []).length > 2 && (
+                                <span className="text-muted-foreground">
+                                  +{report.reports.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                report.reports?.[0]?.status || 'pending'
+                              )}`}
+                            >
+                              {(report.reports?.[0]?.status || 'pending').replace("_", " ")}
                             </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            report.status
-                          )}`}
-                        >
-                          {report.status.replace("_", " ")}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-white">
-                            {report.reportedItemType === "post" && (
-                              <DropdownMenuItem 
-                                className="cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleDeletePost(report.id)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu modal={false}>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent 
+                                align="end" 
+                                className="bg-white"
+                                sideOffset={5}
                               >
-                                Delete
-                              </DropdownMenuItem>
-                            )}
-                            {report.reportedItemType === "profile" && (
-                              <>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer hover:bg-gray-100"
-                                  onClick={() => handleRestrictUser(report.id)}
-                                >
-                                  Restrict
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer hover:bg-gray-100"
-                                  onClick={() => handleBlockUser(report.id)}
-                                >
-                                  Block
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {report.reportedItemType === "digital_product" && (
-                              <DropdownMenuItem 
-                                className="cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleStopProduct(report.id)}
-                              >
-                                Stop
-                              </DropdownMenuItem>
-                            )}
-                            {report.reportedItemType === "comment" && (
-                              <DropdownMenuItem 
-                                className="cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleDeleteComment(report.id)}
-                              >
-                                Delete Comment
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
+                                {report.type === "post" && (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleDeletePost(report.resourceId)}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                )}
+                                {report.type === "profile" && (
+                                  <>
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer hover:bg-gray-100"
+                                      onClick={() => handleRestrictUser(report.resourceId)}
+                                    >
+                                      Restrict
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer hover:bg-gray-100"
+                                      onClick={() => handleBlockUser(report.resourceId)}
+                                    >
+                                      Block
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {report.type === "digital_product" && (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleStopProduct(report.resourceId)}
+                                  >
+                                    Stop
+                                  </DropdownMenuItem>
+                                )}
+                                {report.type === "comment" && (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleDeleteComment(report.resourceId)}
+                                  >
+                                    Delete Comment
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+          </div>
         </Tabs>
+
+        {!loading && reports.length > 0 && (
+          <div className="flex justify-center mt-4">
+            <Pagination 
+              count={totalPages} 
+              page={page} 
+              onChange={(_, value) => setPage(value)} 
+              color="primary" 
+            />
+          </div>
+        )}
       </div>
     </Box>
   );
