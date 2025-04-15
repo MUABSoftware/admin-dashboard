@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
@@ -16,8 +16,11 @@ import {
   Pagination,
   CircularProgress,
   Chip,
+  Tabs as MuiTabs,
+  Tab,
 } from "@mui/material";
 import { CheckCircle, HourglassEmpty, ErrorOutline } from "@mui/icons-material";
+import { MessageCircle } from "lucide-react";
 import request from "@src/config/axios";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -32,7 +35,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@src/components/ui/tabs";
 import { Badge } from "@src/components/ui/badge";
 import { Button } from "@src/components/ui/button";
-import { Flag, User, MoreVertical } from "lucide-react";
+import { 
+  // Eye, 
+  Flag, User, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,41 +62,41 @@ interface Report {
 }
 
 // Mock data - grouped by reported item ID
-// const mockReports: Report[] = [
-//   {
-//     id: "1",
-//     reportedItemId: "post-123",
-//     reportedItemType: "post",
-//     title: "Inappropriate marketing post",
-//     reportedBy: ["user123", "user456", "user789"],
-//     reason: ["Spam", "Misleading", "Harassment"],
-//     status: "pending",
-//     date: "2025-04-08",
-//     totalReports: 3,
-//   },
-//   {
-//     id: "2",
-//     reportedItemId: "profile-456",
-//     reportedItemType: "profile",
-//     title: "JaneDoe",
-//     reportedBy: ["user222", "user333"],
-//     reason: ["Fake Account", "Impersonation"],
-//     status: "in_progress",
-//     date: "2025-04-07",
-//     totalReports: 2,
-//   },
-//   {
-//     id: "3",
-//     reportedItemId: "digital_product-789",
-//     reportedItemType: "digital_product",
-//     title: "Misleading Course Bundle",
-//     reportedBy: ["user444", "user555", "user666", "user777"],
-//     reason: ["Copyright", "Misleading", "Scam", "Duplicate"],
-//     status: "resolved",
-//     date: "2025-04-06",
-//     totalReports: 4,
-//   },
-// ];
+const mockReports: Report[] = [
+  {
+    id: "1",
+    reportedItemId: "post-123",
+    reportedItemType: "post",
+    title: "Inappropriate marketing post",
+    reportedBy: ["user123", "user456", "user789"],
+    reason: ["Spam", "Misleading", "Harassment"],
+    status: "pending",
+    date: "2025-04-08",
+    totalReports: 3,
+  },
+  {
+    id: "2",
+    reportedItemId: "profile-456",
+    reportedItemType: "profile",
+    title: "JaneDoe",
+    reportedBy: ["user222", "user333"],
+    reason: ["Fake Account", "Impersonation"],
+    status: "in_progress",
+    date: "2025-04-07",
+    totalReports: 2,
+  },
+  {
+    id: "3",
+    reportedItemId: "digital_product-789",
+    reportedItemType: "digital_product",
+    title: "Misleading Course Bundle",
+    reportedBy: ["user444", "user555", "user666", "user777"],
+    reason: ["Copyright", "Misleading", "Scam", "Duplicate"],
+    status: "resolved",
+    date: "2025-04-06",
+    totalReports: 4,
+  },
+];
 
 const getStatusColor = (status: Report["status"]) => {
   switch (status) {
@@ -113,6 +118,8 @@ const getTypeIcon = (type: Report["reportedItemType"]) => {
     case "post":
     case "digital_product":
       return <Flag className="h-4 w-4 mr-1" />;
+    case "comment":
+      return <MessageCircle className="h-4 w-4 mr-1" />;
     default:
       return <Flag className="h-4 w-4 mr-1" />;
   }
@@ -126,6 +133,8 @@ const getTypeLabel = (type: Report["reportedItemType"]) => {
       return "Post";
     case "digital_product":
       return "Digital Product";
+    case "comment":
+      return "Comment";
     default:
       return type;
   }
@@ -136,22 +145,21 @@ export default function AdminReports() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState("pending");
+  const [activeTab, setActiveTab] = useState<string>("pending");
 
   const PAGE_SIZE = 10;
 
   const router = useRouter();
 
   useEffect(() => {
-    fetchReports();
+    fetchReports(selectedStatus);
   }, [page, selectedStatus]);
 
-  const fetchReports = async () => {
+  const fetchReports = async (status: any) => {
     setLoading(true);
     try {
-      const statusParam = selectedStatus === "all" ? "" : `&status=${selectedStatus}`;
-      const response = await request.get(`/reports?page=${page}&limit=${PAGE_SIZE}${statusParam}`);
+      const response = await request.get(`/reports/posts?page=${page}&limit=${PAGE_SIZE}&status=${status}`);
       setReports(response.data.reports);
       setTotalPages(response.data.totalPages);
     } catch (error) {
@@ -164,7 +172,7 @@ export default function AdminReports() {
   const updateStatus = async (postId: string, status: string) => {
     try {
       await request.put(`/reports/posts/${postId}`, { status });
-      fetchReports();
+      fetchReports(selectedStatus);
     } catch (error) {
       console.error("Error updating status:", error);
     }
@@ -173,6 +181,34 @@ export default function AdminReports() {
   const handlePageChange = (_: any, value: any) => {
     setPage(value);
   };
+
+  const handleTabChange = (_: any, newValue: any) => {
+    setPage(1);
+    setSelectedStatus(newValue);
+  };
+
+  const statusChip = (status: any) => {
+    const statusColors: any = {
+      pending: "warning",
+      "In progress": "info",
+      resolved: "success",
+    };
+    return (
+      <Chip
+        label={status}
+        color={statusColors[status]}
+        icon={status === "pending" ? <HourglassEmpty /> : status === "In progress" ? <ErrorOutline /> : <CheckCircle />}
+        size="small"
+      />
+    );
+  };
+
+  const filteredReports = useMemo(() => {
+    return mockReports.filter((report) => {
+      if (activeTab === "all") return true;
+      return report.status === activeTab;
+    });
+  }, [activeTab]);
 
   const handleViewReportDetails = (reportId: string) => {
     router.push(`/reports/${reportId}`);
@@ -198,48 +234,36 @@ export default function AdminReports() {
     console.log("Stopping product for report:", reportId);
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    console.log("Deleting comment:", commentId);
+  const handleDeleteComment = (reportId: string) => {
+    console.log("Deleting comment for report:", reportId);
   };
 
   return (
     <Box>
+
+      {/* New Design Below */}
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Reports Management</h1>
           <div className="flex gap-2">
             <Badge variant="secondary">
-              Total Reports: {reports.length}
+              Pending: {mockReports.filter(item => item.status === "pending").length}
+            </Badge>
+            <Badge variant="secondary">
+              In Progress: {mockReports.filter(item => item.status === "in_progress").length}
+            </Badge>
+            <Badge variant="secondary">
+              Resolved: {mockReports.filter(item => item.status === "resolved").length}
             </Badge>
           </div>
         </div>
 
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger 
-              value="all" 
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              All Reports
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pending"
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              Pending
-            </TabsTrigger>
-            <TabsTrigger 
-              value="in_progress"
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              In Progress
-            </TabsTrigger>
-            <TabsTrigger 
-              value="resolved"
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              Resolved
-            </TabsTrigger>
+            <TabsTrigger value="all">All Reports</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+            <TabsTrigger value="resolved">Resolved</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-0">
@@ -251,15 +275,16 @@ export default function AdminReports() {
                     <TableHead>Type</TableHead>
                     <TableHead>Title/Username</TableHead>
                     <TableHead>Total Reports</TableHead>
+                    <TableHead>Comment</TableHead>
                     <TableHead>Reported By</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reports.map((report: any) => (
+                  {filteredReports.map((report) => (
                     <TableRow key={report.id}>
-                      <TableCell>{formatDistanceToNow(new Date(report.date), { addSuffix: true })}</TableCell>
+                      <TableCell>{report.date}</TableCell>
                       <TableCell>
                         <div 
                           className="flex items-center cursor-pointer hover:text-primary"
@@ -281,8 +306,15 @@ export default function AdminReports() {
                         <Badge>{report.totalReports}</Badge>
                       </TableCell>
                       <TableCell>
+                        {report.reportedItemType === "comment" && (
+                          <div className="flex items-center cursor-pointer hover:text-primary">
+                            {report.comment?.content}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {report.reportedBy?.slice(0, 2).map((user: string, index: number) => (
+                          {report.reportedBy.slice(0, 2).map((user, index) => (
                             <span 
                               key={index}
                               className="cursor-pointer hover:text-primary hover:underline"
@@ -291,7 +323,7 @@ export default function AdminReports() {
                               {user}
                             </span>
                           ))}
-                          {report.reportedBy?.length > 2 && (
+                          {report.reportedBy.length > 2 && (
                             <span className="text-muted-foreground">
                               +{report.reportedBy.length - 2} more
                             </span>
@@ -323,6 +355,14 @@ export default function AdminReports() {
                                 Delete
                               </DropdownMenuItem>
                             )}
+                            {report.reportedItemType === "comment" && (
+                              <DropdownMenuItem 
+                                className="cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleDeleteComment(report.id)}
+                              >
+                                Delete Comment
+                              </DropdownMenuItem>
+                            )}
                             {report.reportedItemType === "profile" && (
                               <>
                                 <DropdownMenuItem 
@@ -347,14 +387,6 @@ export default function AdminReports() {
                                 Stop
                               </DropdownMenuItem>
                             )}
-                            {report.reportedItemType === "comment" && (
-                              <DropdownMenuItem 
-                                className="cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleDeleteComment(report.id)}
-                              >
-                                Delete Comment
-                              </DropdownMenuItem>
-                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -366,6 +398,116 @@ export default function AdminReports() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Box sx={{ px: "2rem", py: "1rem" }}>
+        <MuiTabs value={selectedStatus} onChange={handleTabChange} aria-label="report status filter" centered>
+          <Tab label="Pending" value="pending" />
+          <Tab label="In Progress" value="In progress" />
+          <Tab label="Resolved" value="resolved" />
+        </MuiTabs>
+
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <TableContainer elevation={0} component={Card} sx={{ marginTop: "1rem", borderRadius: "8px", padding: 0 }}>
+              <MuiTable>
+                <MuiTableHead>
+                  <MuiTableRow>
+                    <MuiTableCell>
+                      <b>Date</b>
+                    </MuiTableCell>
+                    <MuiTableCell>
+                      <b>Post Title</b>
+                    </MuiTableCell>
+                    <MuiTableCell>
+                      <b>Total Reports</b>
+                    </MuiTableCell>
+                    <MuiTableCell>
+                      <b>Reported By (Names)</b>
+                    </MuiTableCell>
+                    <MuiTableCell>
+                      <b>Current Status</b>
+                    </MuiTableCell>
+                    <MuiTableCell>
+                      <b>Actions</b>
+                    </MuiTableCell>
+                  </MuiTableRow>
+                </MuiTableHead>
+                <MuiTableBody>
+                  {reports.map((report: any) => (
+                    <MuiTableRow key={report._id}>
+                      <MuiTableCell>{formatDistanceToNow(new Date(report.latestReportDate), { addSuffix: true })}</MuiTableCell>
+                      <MuiTableCell
+                        sx={{
+                          "&:hover": {
+                            color: "blueviolet",
+                          },
+                        }}
+                      >
+                        <Link
+                          href={`/posts/${report._id}`}
+                          style={{
+                            textDecoration: "none",
+                            color: "inherit",
+                          }}
+                        >
+                          {report.post?.title || "No Title"}
+                        </Link>
+                      </MuiTableCell>
+                      <MuiTableCell>{report.totalReports}</MuiTableCell>
+                      <MuiTableCell>
+                        {report.users?.slice(0, 2).map((user: any) => (
+                          <Chip
+                            key={user._id}
+                            label={user.name || "Unknown"}
+                            variant="outlined"
+                            size="small"
+                            sx={{ marginRight: "5px", marginBottom: "5px" }}
+                          />
+                        ))}
+                        {report.users?.length > 2 && (
+                          <Typography variant="caption" sx={{ display: "inline", marginLeft: "5px" }}>
+                            +{report.users.length - 2} more
+                          </Typography>
+                        )}
+                      </MuiTableCell>
+
+                      <MuiTableCell>{statusChip(report.reports[0]?.status)}</MuiTableCell>
+                      <MuiTableCell>
+                        <Tooltip title="Mark In Progress">
+                          <IconButton
+                            color="primary"
+                            onClick={() => updateStatus(report._id, "In progress")}
+                            disabled={report.reports[0]?.status === "In progress"}
+                          >
+                            <HourglassEmpty />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Mark Resolved">
+                          <IconButton
+                            color="success"
+                            onClick={() => updateStatus(report._id, "resolved")}
+                            disabled={report.reports[0]?.status === "resolved"}
+                          >
+                            <CheckCircle />
+                          </IconButton>
+                        </Tooltip>
+                      </MuiTableCell>
+                    </MuiTableRow>
+                  ))}
+                </MuiTableBody>
+              </MuiTable>
+            </TableContainer>
+
+            <Box display="flex" justifyContent="center" marginTop="2rem">
+              <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
+            </Box>
+          </>
+        )}
+      </Box>
     </Box>
   );
 }
