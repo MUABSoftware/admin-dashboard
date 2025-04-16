@@ -7,7 +7,7 @@ import {
   Pagination,
 } from "@mui/material";
 import request from "@src/config/axios";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -258,7 +258,7 @@ export default function AdminReports() {
                         <TableRow key={report.resourceId}>
                           <TableCell>
                             {report.latestReportDate ? 
-                              formatDistanceToNow(new Date(report.latestReportDate), { addSuffix: true }) :
+                              format(new Date(report.latestReportDate), 'dd-MM-yyyy') :
                               'N/A'
                             }
                           </TableCell>
