@@ -106,7 +106,7 @@ export default function AdminReports() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const response = await request.get(`/reports/posts?page=${page}&limit=${PAGE_SIZE}&status=${selectedStatus}`, {
+      const response = await request.get(`/reports/?page=${page}&status=${selectedStatus}`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
