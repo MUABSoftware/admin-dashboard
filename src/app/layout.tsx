@@ -8,7 +8,8 @@ import "@src/global.css";
 import "@src/globals.css";
 import { ThemeContext } from "@src/context/theme-context";
 import { ToastContainer } from 'react-toastify';
-   import 'react-toastify/dist/ReactToastify.css'; // Import the CSS for styling
+import 'react-toastify/dist/ReactToastify.css'; // Import the CSS for styling
+import { Toaster } from "sonner";
 
 const pathsWithNoLayout = ["/login"];
 
@@ -68,6 +69,7 @@ export default function RootLayout({
           </MUIThemeProvider>
         </ThemeContext.Provider>
         <ToastContainer />
+        <Toaster position="top-right" />
       </body>
     </html>
   );
