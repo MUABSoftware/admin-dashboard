@@ -39,6 +39,7 @@ interface ReportEntry {
 interface Resource {
   _id: string;
   title: string;
+  name?: string;
 }
 
 interface Report {
