@@ -95,7 +95,7 @@ export default function AdminReports() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
-  const PAGE_SIZE = 10;
+  // const PAGE_SIZE = 10;
 
   const router = useRouter();
 
@@ -168,11 +168,11 @@ export default function AdminReports() {
   };
 
   const handleTabChange = (value: string) => {
-    if (value === activeTab) return;
-    
+    // if (value === activeTab) return;
+    console.log(value);
     setActiveTab(value);
     setPage(1);
-    setSelectedStatus(value === "all" ? "" : value);
+    setSelectedStatus(value);
   };
 
   return (
