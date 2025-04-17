@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@src/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ReportEntry {
   reportedById: string;
@@ -95,7 +96,7 @@ export default function AdminReports() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-
+  const [error, setError] = useState<string | null>(null);
   // const PAGE_SIZE = 10;
 
   const router = useRouter();
@@ -148,8 +149,25 @@ export default function AdminReports() {
     router.push(`/users/${userId}`);
   };
 
-  const handleDeletePost = (reportId: string) => {
-    // Implementation pending
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await request.delete(`/posts/${postId}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      toast.success("Post deleted successfully", {
+        duration: 3000,
+        position: "top-right"
+      });
+      fetchReports();
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      toast.error("Failed to delete post: " + error.message, {
+        duration: 3000,
+        position: "top-right"
+      });
+    }
   };
 
   const handleRestrictUser = (reportId: string) => {
@@ -164,8 +182,26 @@ export default function AdminReports() {
     // Implementation pending
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    // Implementation pending
+  
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await request.delete(`/comment/${commentId}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      toast.success("Comment deleted successfully", {
+        duration: 3000,
+        position: "top-right"
+      });
+      fetchReports();
+    } catch (error: any) {
+      console.error('Error deleting comment:', error);
+      toast.error("Failed to delete comment: " + error.message, {
+        duration: 3000,
+        position: "top-right"
+      });
+    }
   };
 
   const handleTabChange = (value: string) => {
@@ -304,7 +340,7 @@ export default function AdminReports() {
                               className="cursor-pointer hover:text-primary hover:underline"
                               onClick={() => handleViewReportDetails(report.resourceId)}
                             >
-                              {report.resource?.title || 'Untitled'}
+                              {report.resource?.title || report.resource?.name || 'N/A'}
                             </span>
                           </TableCell>
                           <TableCell>
