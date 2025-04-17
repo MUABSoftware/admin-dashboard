@@ -45,8 +45,9 @@ interface Report {
   latestReportDate: string;
   reports: ReportEntry[];
   resource: Resource;
-  type: "profile" | "post" | "digital_product" | "comment";
+  type: "profile" | "post" | "digital_product" | "comment" | "user" | "||";
   resourceId: string;
+  status?: "active" | "blocked";
 }
 
 const getStatusColor = (status: Report["reports"][0]["status"]) => {
@@ -88,7 +89,7 @@ const getTypeLabel = (type: Report["type"]) => {
 };
 
 export default function AdminReports() {
-  const [reports, setReports] = useState([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -173,6 +174,33 @@ export default function AdminReports() {
     setActiveTab(value);
     setPage(1);
     setSelectedStatus(value);
+  };
+
+  const handleStatusChange = async (userId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === "blocked" ? "active" : "blocked";
+      
+      const response = await request({
+        method: 'patch',
+        url: `/users/${userId}/status`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: {
+          status: newStatus
+        }
+      });
+      
+      setReports(prevReports => prevReports.map(report => 
+        report.resourceId === userId 
+          ? { ...report, status: newStatus }
+          : report
+      ));
+      setError(null);
+    } catch (error: any) {
+      console.error('Status change error:', error);
+      setError("Failed to change user status: " + error.message);
+    }
   };
 
   return (
@@ -359,6 +387,14 @@ export default function AdminReports() {
                                     onClick={() => handleDeleteComment(report.resourceId)}
                                   >
                                     Delete Comment
+                                  </DropdownMenuItem>
+                                )}
+                                {report.type === "user" && (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleStatusChange(report.resourceId, report.status || "active")}
+                                  >
+                                    {report.status === "blocked" ? "Unblock User" : "Block User"}
                                   </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>

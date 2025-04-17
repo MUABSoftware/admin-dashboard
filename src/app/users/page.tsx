@@ -125,7 +125,7 @@ const UserManagement = () => {
 
   const handleStatusChange = async (event: React.MouseEvent, userId: string, currentStatus: string) => {
     event.stopPropagation();
-    if (selectedUserId && window.confirm("Are you sure you want to change user status?")) {
+    if (selectedUserId) {
       try {
         // The new status will be the opposite of the current status
         const newStatus = currentStatus === "blocked" ? "active" : "blocked";
