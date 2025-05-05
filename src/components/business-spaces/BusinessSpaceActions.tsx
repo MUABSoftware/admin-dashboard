@@ -179,7 +179,6 @@ export function BusinessSpaceActionss({ business }: BusinessSpaceActionsProps,) 
           </div>
           <DialogFooter>
             <Button
-
               onClick={() => setIsRejectDialogOpen(false)}
               // style={{ backgroundColor: "red !important", color: "#000" }}
               className="bg-red-500 hover:bg-red-600 text-white"
@@ -191,9 +190,7 @@ export function BusinessSpaceActionss({ business }: BusinessSpaceActionsProps,) 
               onClick={handleReject}
               // disabled={!rejectNote.trim()}
               // style={{ backgroundColor: "#fff !important", color: "#000" }}
-              className="bg-red-500 hover:bg-red-600 text-white"
-
-            >
+              className="bg-red-500 hover:bg-red-600 text-white">
               Reject
             </Button>
           </DialogFooter>

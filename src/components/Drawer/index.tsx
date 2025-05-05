@@ -3,7 +3,7 @@ import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box, Divider,
 import { Business, Home, MonetizationOn, People, PostAdd, Report, Settings, Inventory as Product, AccountBalance, KeyboardArrowDown, KeyboardArrowUp, Category, Tag } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Store } from "lucide-react";
+import { Building2, User, ShoppingBasket, FileCog, FileText } from "lucide-react";
 
 type NavigationItem = {
   text: string;
@@ -26,32 +26,36 @@ const CustomDrawer: React.FC<DrawerProps> = ({ mobileOpen, handleDrawerToggle, s
   const [openSubMenu, setOpenSubMenu] = React.useState<string | null>(null);
 
   const navigationItems: NavigationItem[] = [
-    { text: "Dashboard", icon: <Home />, route: "/" },
-    { text: "Business Spaces", icon: <Business />, route: "/business-spaces/" },
-    { text: "Market Place", icon: <Store />, route: "/marketplace/" },
-    { text: "Digital Products", icon: <Product />, route: "/digitalProducts/" },
+    { text: "Home", icon: <Home />, route: "/" },
+    { text: "Business Spaces", icon: <Building2 />, route: "/business-spaces/" },
+    { text: "Digital Products", icon: <ShoppingBasket />, route: "/digitalProducts/" }, 
+    { text: "Users Management", icon: <User />, route: "/users" },
+    { text: "Posts Management", icon: <FileCog />, route: "/posts" },
+    { text: "Reports", icon: <FileText />, route: "/reports" },
+    
+
+
+    // { text: "Market Place", icon: <Store />, route: "/marketplace/" },
+    // { text: "Revenue Share Reports", icon: <MonetizationOn />, route: "/revenue-share" },
+    // {
+    //   text: "Categories",
+    //   icon: <Category />,
+    //   subItems: [
+    //     { text: "Category", icon: <Category />, route: "/categories/" },
+    //     { text: "Hashtag", icon: <Tag />, route: "/categories/hashtag" },
+    //   ],
+    // },
+    // {
+    //   text: "Bank Account",
+    //   icon: <AccountBalance />,
+    //   subItems: [
+    //     { text: "PayPal Payouts", icon: <MonetizationOn />, route: "/bankaccount/paypal" },
+    //     { text: "Payoneer Payouts", icon: <MonetizationOn />, route: "/bankaccount/payoneer" },
+    //   ],
+    // },
+
     // { text: "Categories", icon: <Category />, route: "/categories/" },
-    {
-      text: "Categories",
-      icon: <Category />,
-      subItems: [
-        { text: "Category", icon: <Category />, route: "/categories/" },
-        { text: "Hashtag", icon: <Tag />, route: "/categories/hashtag" },
-      ],
-    },
-    { text: "Users", icon: <People />, route: "/users" },
-    { text: "Posts", icon: <PostAdd />, route: "/posts" },
-    { text: "Revenue Share Reports", icon: <MonetizationOn />, route: "/revenue-share" },
-    {
-      text: "Bank Account",
-      icon: <AccountBalance />,
-      subItems: [
-        { text: "PayPal Payouts", icon: <MonetizationOn />, route: "/bankaccount/paypal" },
-        { text: "Payoneer Payouts", icon: <MonetizationOn />, route: "/bankaccount/payoneer" },
-      ],
-    },
-    { text: "Reports", icon: <Report />, route: "/reports" },
-    { text: "Settings", icon: <Settings />, route: "/settings" },
+    // { text: "Settings", icon: <Settings />, route: "/settings" },
   ];
 
   const handleNavigation = (route: NavigationItem) => {
