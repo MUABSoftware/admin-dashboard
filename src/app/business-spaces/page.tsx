@@ -15,9 +15,9 @@ export default function BusinessSpaces() {
       <StatsOverview />
       
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">All Business Spaces</h2>
-        </div>
+        </div> */}
         <BusinessSpacesTable />
       </div>
     </div>
