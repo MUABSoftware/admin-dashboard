@@ -17,7 +17,6 @@ import {
   TablePagination,
   CircularProgress,
   IconButton,
-  // Tooltip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -32,7 +31,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid, Le
 import debounce from "lodash/debounce";
 import request from "@src/config/axios";
 import { useTheme } from "@mui/system";
-// import { Delete } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -41,13 +39,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@src/components/ui/dropdown-menu";
-import { MoreVertical, MessageSquare, Ban } from "lucide-react";
-// import { toast } from "react-hot-toast";
+import { MoreVertical, Ban, Trash2 } from "lucide-react";
+
+type Post = {
+  _id: string;
+  title: string;
+  userId: string;
+  postType: string;
+  numOfLikes: number;
+  numOfComments: number;
+  // Add more fields as needed
+  createdAt: string;
+  // If you have report count, add it here, e.g.:
+  reportCount?: number;
+  status: string;
+};
 
 const PostsManagementPage = () => {
   const theme = useTheme();
   const history = useRouter();
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [totalCount, setTotalCount] = useState(0);
@@ -59,7 +70,7 @@ const PostsManagementPage = () => {
   const [matchedRecord, setMatchedRecord] = useState(0);
 
   const [openDialog, setOpenDialog] = useState(false);
-  const [postToDelete, setPostToDelete] = useState(null);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -74,8 +85,7 @@ const PostsManagementPage = () => {
     setLoading(true);
     setError("");
     try {
-      const params: any = {
-        searchTerm,
+      const params: any = { searchTerm,
         sortBy,
         order,
         page,
@@ -85,12 +95,12 @@ const PostsManagementPage = () => {
       const { data } = await request.get("/posts", {
         params,
       });
+      console.log(data);
       setPosts(data.data);
       setTotalCount(data.totalCount);
       setMatchedRecord(data.matched);
     } catch (err) {
       console.log(err);
-
       setError("Failed to fetch posts");
     } finally {
       setLoading(false);
@@ -105,7 +115,7 @@ const PostsManagementPage = () => {
     []
   );
 
-  const openDeleteDialog = (postId: any) => {
+  const openDeleteDialog = (postId: string) => {
     setPostToDelete(postId);
     setOpenDialog(true);
   };
@@ -115,32 +125,47 @@ const PostsManagementPage = () => {
     setPostToDelete(null);
   };
 
-  const handleDeletePost = async () => {
-    if (postToDelete) {
-      try {
-        await request.delete(`/posts/${postToDelete}`);
-        fetchPosts();
-        setSnackbarMessage("Post successfully deleted!");
-        setOpenSnackbar(true);
-      } catch (err: any) {
-        setError("Failed to delete post" + err.message);
-      } finally {
-        closeDeleteDialog();
-      }
+  // const handleDeletePost = async () => {
+  //   if (postToDelete) {
+  //     try {
+  //       await request.delete(`/posts/${postToDelete}`);
+  //       const updatedPosts = posts.map((post: any) => 
+  //         post._id === postToDelete ? {...post, status: 'deleted'} : post
+  //       );
+  //       setPosts(updatedPosts);
+  //       setSnackbarMessage("Post successfully deleted!");
+  //       setOpenSnackbar(true);
+  //     } catch (err: any) {
+  //       setError("Failed to delete post" + err.message);
+  //     } finally {
+  //       closeDeleteDialog();
+  //     }
+  //   }
+  // };
+
+  const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
+    try {
+      await request.patch(`/posts/${postId}/status`, { status: newStatus });
+      const updatedPosts = posts.map((post: any) => 
+        post._id === postId ? {...post, status: newStatus} : post
+      );
+      setPosts(updatedPosts);
+      setSnackbarMessage(`Post status updated to ${newStatus}`);
+      setOpenSnackbar(true);
+    } catch (err: any) {
+      setError("Failed to update post status: " + err.message);
     }
   };
 
-  const formatRelativeDate = (date: any) => {
+  const formatRelativeDate = (date: string) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
   };
 
-  const viewPost = (postId: any) => {
+  const viewPost = (postId: string) => {
     history.push(`/posts/${postId}`);
   };
 
   const handleChangePage = (event: any, newPage: any) => {
-    console.log({ newPage });
-
     setPage(newPage);
   };
 
@@ -162,99 +187,20 @@ const PostsManagementPage = () => {
   const getFilteredPosts = useCallback(() => {
     switch (filterStatus) {
       case 'approved':
-        return posts.filter((post: any) => post.status === 'approved');
+        return posts.filter((post: Post) => post.status === 'approved');
       case 'in-review':
-        return posts.filter((post: any) => post.status === 'in-review');
+        return posts.filter((post: Post) => post.status === 'in-review');
       case 'rejected':
-        return posts.filter((post: any) => post.status === 'rejected');
-      case 'stopped':
-        return posts.filter((post: any) => post.status === 'stopped');
+        return posts.filter((post: Post) => post.status === 'rejected');
+      case 'deleted':
+        return posts.filter((post: Post) => post.status === 'deleted');
       default:
         return posts;
     }
   }, [posts, filterStatus]);
 
-  // const handleNotifyCreator = (post: any) => {
-  //   toast.success(`Message sent to creator of post: ${post.title}`);
-  // };
-
   return (
     <Box sx={{ padding: 3 }}>
-      <Card variant="outlined" sx={{ marginBottom: 3, padding: 2 }}>
-        <Typography variant="h6" sx={{ marginBottom: 2 }}>
-          Post Engagement Analytics
-        </Typography>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={posts}>
-            <XAxis dataKey="title" />
-            <YAxis />
-            <ChartTooltip />
-            <Legend />
-            <CartesianGrid strokeDasharray="3 3" />
-            <Bar name={"Total Likes"} dataKey="numOfLikes" fill={theme.palette.primary.main} />
-            <Bar name={"Total Comments"} dataKey="numOfComments" fill={theme.palette.secondary.main} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
-
-
-
-      <Card
-        variant="outlined"
-        sx={{
-          marginBottom: 3,
-          padding: 1,
-          borderRadius: 1,
-          position: "sticky",
-          top: 64,
-          zIndex: 1,
-          backgroundColor: theme.palette.background.paper,
-        }}
-      >
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Search Posts"
-              onChange={(e) => handleSearchChange(e.target.value)}
-              variant="outlined"
-              InputProps={{
-                startAdornment: <SearchIcon sx={{ marginRight: 1 }} />,
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Select fullWidth size="small" value={sortBy} onChange={handleSortChange} label="Sort By" variant="outlined">
-              <MenuItem value="createdAt">Date Created</MenuItem>
-              <MenuItem value="numOfLikes">Likes</MenuItem>
-              <MenuItem value="numOfComments">Comments</MenuItem>
-            </Select>
-          </Grid>
-          <Grid item>
-            <Button
-              size="small"
-              variant="contained"
-              onClick={handleOrderChange}
-              startIcon={order === "desc" ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
-            >
-              {order === "desc" ? "Descending" : "Ascending"}
-            </Button>
-          </Grid>
-          <Grid item>
-            <TablePagination
-              component="div"
-              count={totalCount}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={limit}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </Grid>
-          <Grid item>Match Found: {matchedRecord}</Grid>
-        </Grid>
-      </Card>
-
       <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
         <Button
           variant={filterStatus === 'all' ? 'contained' : 'outlined'}
@@ -281,7 +227,7 @@ const PostsManagementPage = () => {
             }
           }}
         >
-          Approved Posts {posts.filter((p: any) => p.status === 'approved').length}
+          Approved Posts {posts.filter((p: Post) => p.status === 'approved').length}
         </Button>
         <Button
           variant={filterStatus === 'in-review' ? 'contained' : 'outlined'}
@@ -294,7 +240,7 @@ const PostsManagementPage = () => {
             }
           }}
         >
-          In Review Posts {posts.filter((p: any) => p.status === 'in-review').length}
+          In Review Posts {posts.filter((p: Post) => p.status === 'in-review').length}
         </Button>
         <Button
           variant={filterStatus === 'rejected' ? 'contained' : 'outlined'}
@@ -307,20 +253,20 @@ const PostsManagementPage = () => {
             }
           }}
         >
-          Rejected Posts {posts.filter((p: any) => p.status === 'rejected').length}
+          Rejected Posts {posts.filter((p: Post) => p.status === 'rejected').length}
         </Button>
         <Button
-          variant={filterStatus === 'stopped' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('stopped')}
+          variant={filterStatus === 'deleted' ? 'contained' : 'outlined'}
+          onClick={() => setFilterStatus('deleted')}
           sx={{
-            color: filterStatus === 'stopped' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'stopped' ? '#bfdbfe' : 'transparent',
+            color: filterStatus === 'deleted' ? '#FFF' : 'inherit',
+            backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
             '&:hover': {
-              backgroundColor: filterStatus === 'stopped' ? '#bfdbfe' : 'transparent',
+              backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
             }
           }}
         >
-          Stopped Posts {posts.filter((p: any) => p.status === 'stopped').length}
+          Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
         </Button>
       </Box>
       <Card variant="outlined" sx={{ minHeight: "100vh", padding: 2, borderRadius: 1 }}>
@@ -343,13 +289,14 @@ const PostsManagementPage = () => {
           <Table>
             <TableHead>
               <TableRow>
-                {/* <TableCell>checkbox</TableCell>
-                <TableCell>Title</TableCell> */}
-                <TableCell>Business name</TableCell>
-                <TableCell align="center">Likes</TableCell>
-                <TableCell align="center">Comments</TableCell>
+                <TableCell>Post Title</TableCell>
+                <TableCell>Post Owner</TableCell>
+                <TableCell>Account Type</TableCell>
+                <TableCell>Likes Count</TableCell>
+                <TableCell>Comments Count</TableCell>
+                <TableCell>Report Count</TableCell>
                 <TableCell>Posted on</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -358,10 +305,13 @@ const PostsManagementPage = () => {
                   <TableCell sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
                     <Typography variant="body2">{post.title}</Typography>
                   </TableCell>
-                  <TableCell align="center">{post.numOfLikes}</TableCell>
-                  <TableCell align="center">{post.numOfComments}</TableCell>
+                  <TableCell>{post.userId}</TableCell>
+                  <TableCell>{post.postType}</TableCell>
+                  <TableCell>{post.numOfLikes}</TableCell>
+                  <TableCell>{post.numOfComments}</TableCell>
+                  <TableCell>{post.reportCount ?? 0}</TableCell>
                   <TableCell>{formatRelativeDate(post.createdAt)}</TableCell>
-                  <TableCell align="center">
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <IconButton size="small">
@@ -369,29 +319,21 @@ const PostsManagementPage = () => {
                         </IconButton>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
-                        <DropdownMenuItem>
-                          <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          Approve post
+                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'approved')}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                          Approve
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in-review')}>
                           <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          In Review post
+                          Pending Review
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          Reject post
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          Stopped post
+                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'rejected')}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                          Reject
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openDeleteDialog(post._id)}>
-                          <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          Delete Post
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          Message Creator
+                          <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -413,9 +355,9 @@ const PostsManagementPage = () => {
             Cancel
           </Button>
           <Button
-            onClick={() => {
-              handleDeletePost();
-            }}
+            // onClick={() => {
+            //   handleDeletePost();
+            // }}
             color="error"
           >
             Delete
