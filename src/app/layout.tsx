@@ -55,7 +55,7 @@ export default function RootLayout({
     <html lang="en">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
       <title>{pageTitle}</title>
-      <body>
+      <body className="customBodyClass">
         <ThemeContext.Provider value={{ mode, toggleTheme }}>
           <MUIThemeProvider theme={theme}>
             <CssBaseline />
