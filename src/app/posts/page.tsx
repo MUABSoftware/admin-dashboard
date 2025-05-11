@@ -206,6 +206,7 @@ const PostsManagementPage = () => {
           variant={filterStatus === 'all' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('all')}
           startIcon={<ArrowDownwardIcon />}
+          className="topButtonSize"
           sx={{
             color: filterStatus === 'all' ? '#000' : 'inherit',
             backgroundColor: filterStatus === 'all' ? '#bfdbfe !important' : 'transparent',
@@ -219,6 +220,7 @@ const PostsManagementPage = () => {
         <Button
           variant={filterStatus === 'approved' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('approved')}
+          className="topButtonSize"
           sx={{
             color: filterStatus === 'approved' ? '#FFF' : 'inherit',
             backgroundColor: filterStatus === 'approved' ? '#bfdbfe' : 'transparent',
@@ -232,6 +234,7 @@ const PostsManagementPage = () => {
         <Button
           variant={filterStatus === 'in-review' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('in-review')}
+          className="topButtonSize"
           sx={{
             color: filterStatus === 'in-review' ? '#FFF' : 'inherit',
             backgroundColor: filterStatus === 'in-review' ? '#bfdbfe' : 'transparent',
@@ -245,6 +248,7 @@ const PostsManagementPage = () => {
         <Button
           variant={filterStatus === 'rejected' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('rejected')}
+          className="topButtonSize"
           sx={{
             color: filterStatus === 'rejected' ? '#FFF' : 'inherit',
             backgroundColor: filterStatus === 'rejected' ? '#bfdbfe' : 'transparent',
@@ -258,6 +262,7 @@ const PostsManagementPage = () => {
         <Button
           variant={filterStatus === 'deleted' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('deleted')}
+          className="topButtonSize"
           sx={{
             color: filterStatus === 'deleted' ? '#FFF' : 'inherit',
             backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
@@ -269,7 +274,7 @@ const PostsManagementPage = () => {
           Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
         </Button>
       </Box>
-      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 2, borderRadius: 1 }}>
+      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 1 }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
             <CircularProgress />
@@ -286,22 +291,23 @@ const PostsManagementPage = () => {
             </Typography>
           </Box>
         ) : (
-          <Table>
-            <TableHead>
+          <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+          <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <TableRow>
-                <TableCell>Post Title</TableCell>
-                <TableCell>Post Owner</TableCell>
-                <TableCell>Account Type</TableCell>
-                <TableCell>Likes Count</TableCell>
-                <TableCell>Comments Count</TableCell>
-                <TableCell>Report Count</TableCell>
-                <TableCell>Posted on</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell scope="col">Post Title</TableCell>
+                <TableCell scope="col">Post Owner</TableCell>
+                <TableCell scope="col">Account Type</TableCell>
+                <TableCell scope="col">Likes Count</TableCell>
+                <TableCell scope="col">Comments Count</TableCell>
+                <TableCell scope="col">Report Count</TableCell>
+                <TableCell scope="col">Posted on</TableCell>
+                <TableCell scope="col">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {getFilteredPosts().map((post: any) => (
-                <TableRow key={post._id}>
+                <TableRow key={post._id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
                   <TableCell sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
                     <Typography variant="body2">{post.title}</Typography>
                   </TableCell>
@@ -342,6 +348,7 @@ const PostsManagementPage = () => {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </Card>
 

@@ -10,3 +10,15 @@ body {
   margin: 0;
   padding: 0;
 }
+body.customBodyClass .topButtonSize {
+  width: 150px;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #567fff !important;
+}
+body.customBodyClass .bg-Table-Header-Color {
+  background: #567fff !important;
+}
