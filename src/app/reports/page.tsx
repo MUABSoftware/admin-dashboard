@@ -28,6 +28,7 @@ import {
 } from "@src/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { GridArrowDownwardIcon } from "@mui/x-data-grid";
 
 interface ReportEntry {
   reportedById: string;
@@ -241,16 +242,17 @@ export default function AdminReports() {
   };
 
   return (
+
+    <div className="mx-auto p-8">
+    <div className="space-y-2 mb-4">
+      <h1 className="text-3xl font-bold tracking-tight">Reports Management</h1>
+      <p className="text-muted-foreground">
+        Manage and monitor all reports in the platform
+      </p>
+    </div>
     <Box>
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Reports Management</h1>
-          <div className="flex gap-2">
-            <Badge variant="secondary">
-              Total Reports: {reports.length}
-            </Badge>
-          </div>
-        </div>
+  
+    {/* Total Reports: {reports.length} */}
 
         <Tabs 
           defaultValue="pending" 
@@ -258,34 +260,39 @@ export default function AdminReports() {
           onValueChange={handleTabChange}
           className="w-full"
         >
-          <TabsList className="mb-4 w-full justify-start">
-            <TabsTrigger 
-              value="all" 
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              All Reports
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pending"
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              Pending
-            </TabsTrigger>
-            <TabsTrigger 
-              value="in_progress"
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              In Progress
-            </TabsTrigger>
-            <TabsTrigger 
-              value="resolved"
-              className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
-            >
-              Resolved
-            </TabsTrigger>
-          </TabsList>
 
-          <div className="relative">
+          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+            <Button
+              variant={activeTab === 'all' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('all')}
+              className={`topButtonSize ${activeTab === 'all' }`}
+            >
+              All Reports {reports.length}
+            </Button>
+            <Button
+              variant={activeTab === 'pending' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('pending')}
+              className={`topButtonSize ${activeTab === 'pending'}`}
+            >
+              Pending Reports {reports.filter(r => r.reports[0].status === 'pending').length}
+            </Button>
+            <Button
+              variant={activeTab === 'in_progress' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('in_progress')}
+              className={`topButtonSize ${activeTab === 'in_progress'}`}
+            >
+              In Progress Reports {reports.filter(r => r.reports[0].status === 'in_progress').length}
+            </Button>
+            <Button
+              variant={activeTab === 'resolved' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('resolved')}
+              className={`topButtonSize ${activeTab === 'resolved'}`}
+            >
+              Resolved Reports {reports.filter(r => r.reports[0].status === 'resolved').length}
+            </Button>
+          </Box>
+
+          {/* <div className="relative"></div> */}
             <TabsContent value={activeTab} className="mt-0">
               {loading ? (
                 <div className="flex justify-center items-center p-8">
@@ -305,22 +312,22 @@ export default function AdminReports() {
                   </p>
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
+                <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                  <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200">
+                    <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Title/Username</TableHead>
-                        <TableHead>Total Reports</TableHead>
-                        <TableHead>Reported By</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableCell scope="col">Date</TableCell>
+                        <TableCell scope="col">Type</TableCell>
+                        <TableCell scope="col">Title/Username</TableCell>
+                        <TableCell scope="col">Total Reports</TableCell>
+                        <TableCell scope="col">Reported By</TableCell>
+                        <TableCell scope="col">Status</TableCell>
+                        <TableCell scope="col" className="text-right">Actions</TableCell>
                       </TableRow>
-                    </TableHeader>
+                    </TableHead>
                     <TableBody>
                       {reports.map((report: Report) => (
-                        <TableRow key={report.resourceId}>
+                        <TableRow key={report.resourceId} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
                           <TableCell>
                             {report.latestReportDate ? 
                               format(new Date(report.latestReportDate), 'dd-MM-yyyy') :
@@ -444,7 +451,7 @@ export default function AdminReports() {
                 </div>
               )}
             </TabsContent>
-          </div>
+          
         </Tabs>
 
         {!loading && reports.length > 0 && (
@@ -457,7 +464,8 @@ export default function AdminReports() {
             />
           </div>
         )}
-      </div>
+     
     </Box>
+    </div>
   );
 }

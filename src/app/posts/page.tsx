@@ -125,23 +125,21 @@ const PostsManagementPage = () => {
     setPostToDelete(null);
   };
 
-  // const handleDeletePost = async () => {
-  //   if (postToDelete) {
-  //     try {
-  //       await request.delete(`/posts/${postToDelete}`);
-  //       const updatedPosts = posts.map((post: any) => 
-  //         post._id === postToDelete ? {...post, status: 'deleted'} : post
-  //       );
-  //       setPosts(updatedPosts);
-  //       setSnackbarMessage("Post successfully deleted!");
-  //       setOpenSnackbar(true);
-  //     } catch (err: any) {
-  //       setError("Failed to delete post" + err.message);
-  //     } finally {
-  //       closeDeleteDialog();
-  //     }
-  //   }
-  // };
+  const handleDeletePost = async () => {
+    if (postToDelete) {
+      try {
+        await request.delete(`/posts/${postToDelete}`);
+        setPage(0);
+        await fetchPosts();
+        setSnackbarMessage("Post successfully deleted!");
+        setOpenSnackbar(true);
+      } catch (err: any) {
+        setError("Failed to delete post: " + err.message);
+      } finally {
+        closeDeleteDialog();
+      }
+    }
+  };
 
   const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
     try {
@@ -200,20 +198,19 @@ const PostsManagementPage = () => {
   }, [posts, filterStatus]);
 
   return (
-    <Box sx={{ padding: 3 }}>
+    <div className="mx-auto p-8">
+    <div className="space-y-2 mb-4">
+      <h1 className="text-3xl font-bold tracking-tight">Posts Management</h1>
+      <p className="text-muted-foreground">
+        Manage and monitor all posts in the platform
+      </p>
+    </div>
+    <Box sx={{ padding: 0 }}>
       <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
         <Button
           variant={filterStatus === 'all' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('all')}
-          startIcon={<ArrowDownwardIcon />}
           className="topButtonSize"
-          sx={{
-            color: filterStatus === 'all' ? '#000' : 'inherit',
-            backgroundColor: filterStatus === 'all' ? '#bfdbfe !important' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'all' ? '#bfdbfe !important' : 'transparent',
-            }
-          }}
         >
           All Posts {posts.length}
         </Button>
@@ -221,13 +218,6 @@ const PostsManagementPage = () => {
           variant={filterStatus === 'approved' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('approved')}
           className="topButtonSize"
-          sx={{
-            color: filterStatus === 'approved' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'approved' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'approved' ? '#bfdbfe' : 'transparent',
-            }
-          }}
         >
           Approved Posts {posts.filter((p: Post) => p.status === 'approved').length}
         </Button>
@@ -235,13 +225,6 @@ const PostsManagementPage = () => {
           variant={filterStatus === 'in-review' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('in-review')}
           className="topButtonSize"
-          sx={{
-            color: filterStatus === 'in-review' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'in-review' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'in-review' ? '#bfdbfe' : 'transparent',
-            }
-          }}
         >
           In Review Posts {posts.filter((p: Post) => p.status === 'in-review').length}
         </Button>
@@ -249,13 +232,6 @@ const PostsManagementPage = () => {
           variant={filterStatus === 'rejected' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('rejected')}
           className="topButtonSize"
-          sx={{
-            color: filterStatus === 'rejected' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'rejected' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'rejected' ? '#bfdbfe' : 'transparent',
-            }
-          }}
         >
           Rejected Posts {posts.filter((p: Post) => p.status === 'rejected').length}
         </Button>
@@ -263,18 +239,11 @@ const PostsManagementPage = () => {
           variant={filterStatus === 'deleted' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('deleted')}
           className="topButtonSize"
-          sx={{
-            color: filterStatus === 'deleted' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
-            }
-          }}
         >
           Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
         </Button>
       </Box>
-      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 1 }}>
+      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 2,border: "1px solid #e0e0e0" }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
             <CircularProgress />
@@ -292,62 +261,62 @@ const PostsManagementPage = () => {
           </Box>
         ) : (
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-          <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-              <TableRow>
-                <TableCell scope="col">Post Title</TableCell>
-                <TableCell scope="col">Post Owner</TableCell>
-                <TableCell scope="col">Account Type</TableCell>
-                <TableCell scope="col">Likes Count</TableCell>
-                <TableCell scope="col">Comments Count</TableCell>
-                <TableCell scope="col">Report Count</TableCell>
-                <TableCell scope="col">Posted on</TableCell>
-                <TableCell scope="col">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {getFilteredPosts().map((post: any) => (
-                <TableRow key={post._id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <TableCell sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
-                    <Typography variant="body2">{post.title}</Typography>
-                  </TableCell>
-                  <TableCell>{post.userId}</TableCell>
-                  <TableCell>{post.postType}</TableCell>
-                  <TableCell>{post.numOfLikes}</TableCell>
-                  <TableCell>{post.numOfComments}</TableCell>
-                  <TableCell>{post.reportCount ?? 0}</TableCell>
-                  <TableCell>{formatRelativeDate(post.createdAt)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <IconButton size="small">
-                          <MoreVertical className="h-4 w-4" />
-                        </IconButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
-                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'approved')}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
-                          Approve
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in-review')}>
-                          <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          Pending Review
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'rejected')}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
-                          Reject
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openDeleteDialog(post._id)}>
-                          <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+            <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200">
+              <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <TableRow>
+                  <TableCell scope="col">Post Title</TableCell>
+                  <TableCell scope="col">Post Owner</TableCell>
+                  <TableCell scope="col" className="text-center-important">Account Type</TableCell>
+                  <TableCell scope="col">Likes Count</TableCell>
+                  <TableCell scope="col">Comments Count</TableCell>
+                  <TableCell scope="col">Report Count</TableCell>
+                  <TableCell scope="col">Posted on</TableCell>
+                  <TableCell scope="col">Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {getFilteredPosts().map((post: any) => (
+                  <TableRow key={post._id} className="bg-white border-b border-gray-200 hover:bg-gray-50">
+                    <TableCell sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
+                      <Typography variant="body2">{post.title}</Typography>
+                    </TableCell>
+                    <TableCell>{post.userId?.name || 'Unknown User'}</TableCell>
+                    <TableCell className="text-center-important">{post.userId?.accountType || 'Unknown Account Type'}</TableCell>
+                    <TableCell className="text-center-important">{post.numOfLikes}</TableCell>
+                    <TableCell className="text-center-important">{post.numOfComments}</TableCell>
+                    <TableCell className="text-center-important">{post.reportCount ?? 0}</TableCell>
+                    <TableCell>{formatRelativeDate(post.createdAt)}</TableCell>
+                    <TableCell className="text-center-important">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton size="small">
+                            <MoreVertical className="h-4 w-4" />
+                          </IconButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'approved')}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                            Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in-review')}>
+                            <Ban className="mr-2 h-4 w-4 text-red-500" />
+                            Pending Review
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'rejected')}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                            Reject
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDeleteDialog(post._id)}>
+                            <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
@@ -362,9 +331,7 @@ const PostsManagementPage = () => {
             Cancel
           </Button>
           <Button
-            // onClick={() => {
-            //   handleDeletePost();
-            // }}
+            onClick={handleDeletePost}
             color="error"
           >
             Delete
@@ -378,6 +345,7 @@ const PostsManagementPage = () => {
         </Alert>
       </Snackbar>
     </Box>
+    </div>
   );
 };
 
