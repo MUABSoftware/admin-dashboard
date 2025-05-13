@@ -10,6 +10,7 @@ body {
   margin: 0;
   padding: 0;
 }
+
 body.customBodyClass .topButtonSize {
   color: #fff;
   border: none;
@@ -21,6 +22,11 @@ body.customBodyClass .topButtonSize {
   /* line-height: 32px !important; */
   height: 44px !important;
 }
+
+body.customBodyClass .text-CustomPrimary-Color {
+  color: #567fff !important;
+}
+
 body.customBodyClass .bg-Table-Header-Color {
   background: #567fff !important;
 }

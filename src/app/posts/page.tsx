@@ -62,7 +62,7 @@ const PostsManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [totalCount, setTotalCount] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [order, setOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("createdAt");
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,6 +76,7 @@ const PostsManagementPage = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [filterStatus, setFilterStatus] = useState('all');
+  
 
   useEffect(() => {
     fetchPosts();
@@ -85,10 +86,11 @@ const PostsManagementPage = () => {
     setLoading(true);
     setError("");
     try {
-      const params: any = { searchTerm,
-        sortBy,
+      const params: any = {
+        searchTerm,
+        sortBy: "createdAt",
         order,
-        page,
+        page: page + 1,
         limit,
       };
 
@@ -143,15 +145,44 @@ const PostsManagementPage = () => {
 
   const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
     try {
-      await request.patch(`/posts/${postId}/status`, { status: newStatus });
-      const updatedPosts = posts.map((post: any) => 
-        post._id === postId ? {...post, status: newStatus} : post
-      );
-      setPosts(updatedPosts);
-      setSnackbarMessage(`Post status updated to ${newStatus}`);
-      setOpenSnackbar(true);
+      const statusMap = {
+        'active': 'active',
+        'inactive': 'inactive',
+        'in_review': 'in_review'
+      };
+
+      console.log('Updating post status:', {
+        postId,
+        newStatus,
+        statusMapValue: statusMap[newStatus as keyof typeof statusMap]
+      });
+
+      const response = await request.put(`/posts/${postId}`, {
+        status: statusMap[newStatus as keyof typeof statusMap]
+      });
+
+      console.log('API Response:', response.data);
+
+      if (response.data?.success) {
+        const updatedPosts = posts.map((post: any) =>
+          post._id === postId ? { ...post, status: newStatus } : post
+        );
+        setPosts(updatedPosts);
+        setSnackbarMessage(`Post status updated to ${newStatus}`);
+        setOpenSnackbar(true);
+        await fetchPosts();
+      }
     } catch (err: any) {
-      setError("Failed to update post status: " + err.message);
+      console.error('Error updating post status:', {
+        error: err,
+        response: err.response,
+        request: err.request,
+        config: err.config
+      });
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(`Failed to update post status: ${errorMessage}`);
+      setSnackbarMessage(`Failed to update post status: ${errorMessage}`);
+      setOpenSnackbar(true);
     }
   };
 
@@ -163,11 +194,11 @@ const PostsManagementPage = () => {
     history.push(`/posts/${postId}`);
   };
 
-  const handleChangePage = (event: any, newPage: any) => {
+  const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: any) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setLimit(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -177,21 +208,14 @@ const PostsManagementPage = () => {
     setPage(0);
   };
 
-  const handleOrderChange = () => {
-    setOrder(order === "desc" ? "asc" : "desc");
-    setPage(0);
-  };
-
   const getFilteredPosts = useCallback(() => {
     switch (filterStatus) {
-      case 'approved':
-        return posts.filter((post: Post) => post.status === 'approved');
-      case 'in-review':
-        return posts.filter((post: Post) => post.status === 'in-review');
-      case 'rejected':
-        return posts.filter((post: Post) => post.status === 'rejected');
-      case 'deleted':
-        return posts.filter((post: Post) => post.status === 'deleted');
+      case 'active':
+        return posts.filter((post: Post) => post.status === 'active');
+      case 'in_review':
+        return posts.filter((post: Post) => post.status === 'in_review');
+      case 'inactive':
+        return posts.filter((post: Post) => post.status === 'inactive');
       default:
         return posts;
     }
@@ -208,39 +232,43 @@ const PostsManagementPage = () => {
     <Box sx={{ padding: 0 }}>
       <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
         <Button
+          className="topButtonSize"
+          onClick={() => {
+            setOrder(order === "desc" ? "asc" : "desc");
+            setPage(0);
+          }}
+          startIcon={order === "desc" ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
+          variant="outlined"
+        >
+          Date: {order === "desc" ? "Newest First" : "Oldest First"}
+        </Button>
+        <Button
           variant={filterStatus === 'all' ? 'contained' : 'outlined'}
           onClick={() => setFilterStatus('all')}
           className="topButtonSize"
         >
-          All Posts {posts.length}
+          All Posts {totalCount}
         </Button>
         <Button
-          variant={filterStatus === 'approved' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('approved')}
+          variant={filterStatus === 'active' ? 'contained' : 'outlined'}
+          onClick={() => setFilterStatus('active')}
           className="topButtonSize"
         >
-          Approved Posts {posts.filter((p: Post) => p.status === 'approved').length}
+          Active Posts {posts.filter((p: Post) => p.status === 'active').length}
         </Button>
         <Button
-          variant={filterStatus === 'in-review' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('in-review')}
+          variant={filterStatus === 'in_review' ? 'contained' : 'outlined'}
+          onClick={() => setFilterStatus('in_review')}
           className="topButtonSize"
         >
-          In Review Posts {posts.filter((p: Post) => p.status === 'in-review').length}
+          Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
         </Button>
         <Button
-          variant={filterStatus === 'rejected' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('rejected')}
+          variant={filterStatus === 'inactive' ? 'contained' : 'outlined'}
+          onClick={() => setFilterStatus('inactive')}
           className="topButtonSize"
         >
-          Rejected Posts {posts.filter((p: Post) => p.status === 'rejected').length}
-        </Button>
-        <Button
-          variant={filterStatus === 'deleted' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('deleted')}
-          className="topButtonSize"
-        >
-          Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
+          Inactive Posts {posts.filter((p: Post) => p.status === 'inactive').length}
         </Button>
       </Box>
       <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 2,border: "1px solid #e0e0e0" }}>
@@ -277,15 +305,15 @@ const PostsManagementPage = () => {
               <TableBody>
                 {getFilteredPosts().map((post: any) => (
                   <TableRow key={post._id} className="bg-white border-b border-gray-200 hover:bg-gray-50">
-                    <TableCell sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
+                    <TableCell className="underline" sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
                       <Typography variant="body2">{post.title}</Typography>
                     </TableCell>
                     <TableCell>{post.userId?.name || 'Unknown User'}</TableCell>
-                    <TableCell className="text-center-important">{post.userId?.accountType || 'Unknown Account Type'}</TableCell>
+                    <TableCell className="text-center-important">{post.userId?.accountType || 'Old User'}</TableCell>
                     <TableCell className="text-center-important">{post.numOfLikes}</TableCell>
                     <TableCell className="text-center-important">{post.numOfComments}</TableCell>
                     <TableCell className="text-center-important">{post.reportCount ?? 0}</TableCell>
-                    <TableCell>{formatRelativeDate(post.createdAt)}</TableCell>
+                    <TableCell>{new Date(post.createdAt).toLocaleDateString('en-GB')}</TableCell>
                     <TableCell className="text-center-important">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -294,15 +322,15 @@ const PostsManagementPage = () => {
                           </IconButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
-                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'approved')}>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'active')}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
                             Approve
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in-review')}>
-                            <Ban className="mr-2 h-4 w-4 text-red-500" />
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in_review')}>
+                            <Ban className="mr-2 h-4 w-4 text-yellow-500" />
                             Pending Review
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'rejected')}>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'inactive')}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
                             Reject
                           </DropdownMenuItem>
@@ -317,6 +345,19 @@ const PostsManagementPage = () => {
                 ))}
               </TableBody>
             </Table>
+            <TablePagination
+              component="div"
+              count={totalCount}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={limit}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[20, 50, 100]}
+              sx={{
+                borderTop: '1px solid #e0e0e0',
+                backgroundColor: 'white',
+              }}
+            />
           </div>
         )}
       </Card>
@@ -327,10 +368,10 @@ const PostsManagementPage = () => {
           <Typography>Are you sure you want to delete this post?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
+          <Button className="topButtonSize" onClick={closeDeleteDialog} color="primary">
             Cancel
           </Button>
-          <Button
+          <Button className="topButtonSize"
             onClick={handleDeletePost}
             color="error"
           >
@@ -340,7 +381,7 @@ const PostsManagementPage = () => {
       </Dialog>
 
       <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
-        <Alert onClose={() => setOpenSnackbar(false)} severity="success" sx={{ width: "100%" }}>
+        <Alert onClose={() => setOpenSnackbar(false)} severity={error ? "error" : "success"} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
