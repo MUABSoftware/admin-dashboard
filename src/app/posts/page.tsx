@@ -66,6 +66,7 @@ const PostsManagementPage = () => {
   const [order, setOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("createdAt");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [matchedRecord, setMatchedRecord] = useState(0);
 
@@ -78,42 +79,53 @@ const PostsManagementPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   
 
-  useEffect(() => {
-    fetchPosts();
-  }, [page, limit, order, sortBy, searchTerm]);
-
   const fetchPosts = async () => {
     setLoading(true);
+    setSearchLoading(true);
     setError("");
     try {
-      const params: any = {
-        searchTerm,
+      const params = {
+        searchTerm: searchTerm.trim(),
         sortBy: "createdAt",
         order,
         page: page + 1,
         limit,
+        status: filterStatus !== 'all' ? filterStatus : undefined
       };
 
+      console.log('Fetching posts with params:', params);
       const { data } = await request.get("/posts", {
         params,
       });
-      console.log(data);
+      console.log('Search response:', { searchTerm, data });
       setPosts(data.data);
       setTotalCount(data.totalCount);
       setMatchedRecord(data.matched);
     } catch (err) {
-      console.log(err);
+      console.error('Search error:', err);
       setError("Failed to fetch posts");
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchPosts();
+  }, [page, limit, order, sortBy, searchTerm, filterStatus]);
+
+  const handleFilterStatusChange = (newStatus: string) => {
+    console.log('Changing filter status to:', newStatus);
+    setFilterStatus(newStatus);
+    setPage(0);
+  };
+
   const handleSearchChange = useCallback(
-    debounce((value) => {
+    debounce((value: string) => {
+      console.log('Search term changed:', value);
       setSearchTerm(value);
       setPage(0);
-    }, 500),
+    }, 300),
     []
   );
 
@@ -230,46 +242,70 @@ const PostsManagementPage = () => {
       </p>
     </div>
     <Box sx={{ padding: 0 }}>
-      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-        <Button
-          className="topButtonSize"
-          onClick={() => {
-            setOrder(order === "desc" ? "asc" : "desc");
-            setPage(0);
-          }}
-          startIcon={order === "desc" ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
-          variant="outlined"
-        >
-          Date: {order === "desc" ? "Newest First" : "Oldest First"}
-        </Button>
-        <Button
-          variant={filterStatus === 'all' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('all')}
-          className="topButtonSize"
-        >
-          All Posts {totalCount}
-        </Button>
-        <Button
-          variant={filterStatus === 'active' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('active')}
-          className="topButtonSize"
-        >
-          Active Posts {posts.filter((p: Post) => p.status === 'active').length}
-        </Button>
-        <Button
-          variant={filterStatus === 'in_review' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('in_review')}
-          className="topButtonSize"
-        >
-          Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
-        </Button>
-        <Button
-          variant={filterStatus === 'inactive' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('inactive')}
-          className="topButtonSize"
-        >
-          Inactive Posts {posts.filter((p: Post) => p.status === 'inactive').length}
-        </Button>
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* <Button
+            className="topButtonSize"
+            onClick={() => {
+              setOrder(order === "desc" ? "asc" : "desc");
+              setPage(0);
+            }}
+            startIcon={order === "desc" ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
+            variant="outlined"
+          >
+            Date: {order === "desc" ? "Newest First" : "Oldest First"}
+          </Button> */}
+          <Button
+            variant={filterStatus === 'all' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('all')}
+            className="topButtonSize"
+          >
+            All Posts {totalCount}
+          </Button>
+          <Button
+            variant={filterStatus === 'active' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('active')}
+            className="topButtonSize"
+          >
+            Approved Posts {posts.filter((p: Post) => p.status === 'active').length}
+          </Button>
+          <Button
+            variant={filterStatus === 'in_review' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('in_review')}
+            className="topButtonSize"
+          >
+            Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
+          </Button>
+          <Button
+            variant={filterStatus === 'inactive' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('inactive')}
+            className="topButtonSize"
+          >
+            Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
+          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <TextField
+            placeholder="Search by title or owner..."
+            size="small"
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <>
+                  <SearchIcon sx={{ color: 'action.active', mr: 1 }} />
+                  {searchLoading && <CircularProgress size={20} sx={{ mr: 1 }} />}
+                </>
+              ),
+            }}
+            sx={{
+              width: '300px',
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '4px',
+              },
+            }}
+          />
+        </Box>
       </Box>
       <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 2,border: "1px solid #e0e0e0" }}>
         {loading ? (
