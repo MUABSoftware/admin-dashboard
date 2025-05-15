@@ -28,7 +28,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
-import debounce from "lodash/debounce";
 import request from "@src/config/axios";
 import { useTheme } from "@mui/system";
 import { useRouter } from "next/navigation";
@@ -48,9 +47,7 @@ type Post = {
   postType: string;
   numOfLikes: number;
   numOfComments: number;
-  // Add more fields as needed
   createdAt: string;
-  // If you have report count, add it here, e.g.:
   reportCount?: number;
   status: string;
 };
@@ -66,6 +63,7 @@ const PostsManagementPage = () => {
   const [order, setOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("createdAt");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [matchedRecord, setMatchedRecord] = useState(0);
@@ -78,32 +76,66 @@ const PostsManagementPage = () => {
 
   const [filterStatus, setFilterStatus] = useState('all');
   
-
   const fetchPosts = async () => {
     setLoading(true);
     setSearchLoading(true);
     setError("");
     try {
       const params = {
-        searchTerm: searchTerm.trim(),
+        search: searchTerm.trim(),
+        title: searchTerm.trim(),
+        content: searchTerm.trim(),
         sortBy: "createdAt",
         order,
         page: page + 1,
         limit,
-        status: filterStatus !== 'all' ? filterStatus : undefined
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        searchAll: true
       };
 
-      console.log('Fetching posts with params:', params);
+      console.log('Search params being sent:', params);
+      console.log('Current search term:', searchTerm);
+      
       const { data } = await request.get("/posts", {
         params,
       });
-      console.log('Search response:', { searchTerm, data });
-      setPosts(data.data);
-      setTotalCount(data.totalCount);
-      setMatchedRecord(data.matched);
-    } catch (err) {
-      console.error('Search error:', err);
-      setError("Failed to fetch posts");
+      
+      console.log('Search response:', {
+        searchTerm,
+        totalResults: data?.data?.length,
+        matchedCount: data?.matched,
+        response: data
+      });
+      
+      if (data && Array.isArray(data.data)) {
+        const filteredPosts = searchTerm
+          ? data.data.filter((post: Post) => {
+              const searchLower = searchTerm.toLowerCase();
+              return (
+                post.title?.toLowerCase().includes(searchLower)
+              );
+            })
+          : data.data;
+
+        setPosts(filteredPosts);
+        setTotalCount(data.totalCount || filteredPosts.length);
+        setMatchedRecord(data.matched || filteredPosts.length);
+      } else {
+        console.log('Invalid data format received:', data);
+        setPosts([]);
+        setTotalCount(0);
+        setMatchedRecord(0);
+      }
+    } catch (err: any) {
+      console.error('Search error:', {
+        error: err,
+        message: err.message,
+        response: err.response?.data
+      });
+      setError(`Failed to fetch posts: ${err.response?.data?.message || err.message}`);
+      setPosts([]);
+      setTotalCount(0);
+      setMatchedRecord(0);
     } finally {
       setLoading(false);
       setSearchLoading(false);
@@ -120,14 +152,30 @@ const PostsManagementPage = () => {
     setPage(0);
   };
 
-  const handleSearchChange = useCallback(
-    debounce((value: string) => {
-      console.log('Search term changed:', value);
-      setSearchTerm(value);
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      console.log('Search submitted with value:', searchInput);
+      setSearchTerm(searchInput.trim());
       setPage(0);
-    }, 300),
-    []
-  );
+      fetchPosts();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.length === 0) {
+      setSearchTerm('');
+      setPage(0);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearchTerm('');
+    setPage(0);
+  };
 
   const openDeleteDialog = (postId: string) => {
     setPostToDelete(postId);
@@ -221,17 +269,17 @@ const PostsManagementPage = () => {
   };
 
   const getFilteredPosts = useCallback(() => {
-    switch (filterStatus) {
-      case 'active':
-        return posts.filter((post: Post) => post.status === 'active');
-      case 'in_review':
-        return posts.filter((post: Post) => post.status === 'in_review');
-      case 'inactive':
-        return posts.filter((post: Post) => post.status === 'inactive');
-      default:
-        return posts;
-    }
-  }, [posts, filterStatus]);
+    if (!searchTerm) return posts;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return posts.filter((post: Post) => {
+      return (
+        post.title?.toLowerCase().includes(searchLower) ||
+        post.userId?.name?.toLowerCase().includes(searchLower) ||
+        post.userId?.accountType?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [posts, searchTerm]);
 
   return (
     <div className="mx-auto p-8">
@@ -286,10 +334,11 @@ const PostsManagementPage = () => {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <TextField
-            placeholder="Search by title or owner..."
+            placeholder="Search by title... (Press Enter to search)"
             size="small"
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            value={searchInput}
+            onChange={handleInputChange}
+            onKeyDown={handleSearchSubmit}
             InputProps={{
               startAdornment: (
                 <>
@@ -307,7 +356,7 @@ const PostsManagementPage = () => {
           />
         </Box>
       </Box>
-      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 2,border: "1px solid #e0e0e0" }}>
+      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 2, border: "1px solid #e0e0e0" }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
             <CircularProgress />
@@ -316,12 +365,25 @@ const PostsManagementPage = () => {
           <Typography color="error" sx={{ textAlign: "center", padding: 4 }}>
             {error}
           </Typography>
-        ) : getFilteredPosts().length === 0 ? (
+        ) : posts.length === 0 ? (
           <Box sx={{ textAlign: "center", padding: 4 }}>
-            <Typography variant="h6">No posts available</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Try adjusting your filters or search criteria.
+            <Typography variant="h6">
+              {searchTerm ? `No posts found matching "${searchTerm}"` : "No posts available"}
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {searchTerm 
+                ? "Try different search keywords or clear the search"
+                : "Try adjusting your filters or search criteria"}
+            </Typography>
+            {searchTerm && (
+              <Button
+                onClick={clearSearch}
+                variant="outlined"
+                sx={{ mt: 2 }}
+              >
+                Clear Search
+              </Button>
+            )}
           </Box>
         ) : (
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
@@ -339,7 +401,7 @@ const PostsManagementPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredPosts().map((post: any) => (
+                {posts.map((post: any) => (
                   <TableRow key={post._id} className="bg-white border-b border-gray-200 hover:bg-gray-50">
                     <TableCell className="underline" sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
                       <Typography variant="body2">{post.title}</Typography>
