@@ -274,9 +274,7 @@ const PostsManagementPage = () => {
     const searchLower = searchTerm.toLowerCase();
     return posts.filter((post: Post) => {
       return (
-        post.title?.toLowerCase().includes(searchLower) ||
-        post.userId?.name?.toLowerCase().includes(searchLower) ||
-        post.userId?.accountType?.toLowerCase().includes(searchLower)
+        post.title?.toLowerCase().includes(searchLower)
       );
     });
   }, [posts, searchTerm]);
