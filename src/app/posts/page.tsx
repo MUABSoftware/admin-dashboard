@@ -28,7 +28,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
-import debounce from "lodash/debounce";
 import request from "@src/config/axios";
 import { useTheme } from "@mui/system";
 import { useRouter } from "next/navigation";
@@ -48,9 +47,7 @@ type Post = {
   postType: string;
   numOfLikes: number;
   numOfComments: number;
-  // Add more fields as needed
   createdAt: string;
-  // If you have report count, add it here, e.g.:
   reportCount?: number;
   status: string;
 };
@@ -62,10 +59,12 @@ const PostsManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [totalCount, setTotalCount] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [order, setOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("createdAt");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [matchedRecord, setMatchedRecord] = useState(0);
 
@@ -76,44 +75,107 @@ const PostsManagementPage = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [filterStatus, setFilterStatus] = useState('all');
-
-  useEffect(() => {
-    fetchPosts();
-  }, [page, limit, order, sortBy, searchTerm]);
-
+  
   const fetchPosts = async () => {
     setLoading(true);
+    setSearchLoading(true);
     setError("");
     try {
-      const params: any = { searchTerm,
-        sortBy,
+      const params = {
+        search: searchTerm.trim(),
+        title: searchTerm.trim(),
+        content: searchTerm.trim(),
+        sortBy: "createdAt",
         order,
-        page,
+        page: page + 1,
         limit,
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        searchAll: true
       };
 
+      console.log('Search params being sent:', params);
+      console.log('Current search term:', searchTerm);
+      
       const { data } = await request.get("/posts", {
         params,
       });
-      console.log(data);
-      setPosts(data.data);
-      setTotalCount(data.totalCount);
-      setMatchedRecord(data.matched);
-    } catch (err) {
-      console.log(err);
-      setError("Failed to fetch posts");
+      
+      console.log('Search response:', {
+        searchTerm,
+        totalResults: data?.data?.length,
+        matchedCount: data?.matched,
+        response: data
+      });
+      
+      if (data && Array.isArray(data.data)) {
+        const filteredPosts = searchTerm
+          ? data.data.filter((post: Post) => {
+              const searchLower = searchTerm.toLowerCase();
+              return (
+                post.title?.toLowerCase().includes(searchLower)
+              );
+            })
+          : data.data;
+
+        setPosts(filteredPosts);
+        setTotalCount(data.totalCount || filteredPosts.length);
+        setMatchedRecord(data.matched || filteredPosts.length);
+      } else {
+        console.log('Invalid data format received:', data);
+        setPosts([]);
+        setTotalCount(0);
+        setMatchedRecord(0);
+      }
+    } catch (err: any) {
+      console.error('Search error:', {
+        error: err,
+        message: err.message,
+        response: err.response?.data
+      });
+      setError(`Failed to fetch posts: ${err.response?.data?.message || err.message}`);
+      setPosts([]);
+      setTotalCount(0);
+      setMatchedRecord(0);
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
-  const handleSearchChange = useCallback(
-    debounce((value) => {
-      setSearchTerm(value);
+  useEffect(() => {
+    fetchPosts();
+  }, [page, limit, order, sortBy, searchTerm, filterStatus]);
+
+  const handleFilterStatusChange = (newStatus: string) => {
+    console.log('Changing filter status to:', newStatus);
+    setFilterStatus(newStatus);
+    setPage(0);
+  };
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      console.log('Search submitted with value:', searchInput);
+      setSearchTerm(searchInput.trim());
       setPage(0);
-    }, 500),
-    []
-  );
+      fetchPosts();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.length === 0) {
+      setSearchTerm('');
+      setPage(0);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearchTerm('');
+    setPage(0);
+  };
 
   const openDeleteDialog = (postId: string) => {
     setPostToDelete(postId);
@@ -125,35 +187,62 @@ const PostsManagementPage = () => {
     setPostToDelete(null);
   };
 
-  // const handleDeletePost = async () => {
-  //   if (postToDelete) {
-  //     try {
-  //       await request.delete(`/posts/${postToDelete}`);
-  //       const updatedPosts = posts.map((post: any) => 
-  //         post._id === postToDelete ? {...post, status: 'deleted'} : post
-  //       );
-  //       setPosts(updatedPosts);
-  //       setSnackbarMessage("Post successfully deleted!");
-  //       setOpenSnackbar(true);
-  //     } catch (err: any) {
-  //       setError("Failed to delete post" + err.message);
-  //     } finally {
-  //       closeDeleteDialog();
-  //     }
-  //   }
-  // };
+  const handleDeletePost = async () => {
+    if (postToDelete) {
+      try {
+        await request.delete(`/posts/${postToDelete}`);
+        setPage(0);
+        await fetchPosts();
+        setSnackbarMessage("Post successfully deleted!");
+        setOpenSnackbar(true);
+      } catch (err: any) {
+        setError("Failed to delete post: " + err.message);
+      } finally {
+        closeDeleteDialog();
+      }
+    }
+  };
 
   const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
     try {
-      await request.patch(`/posts/${postId}/status`, { status: newStatus });
-      const updatedPosts = posts.map((post: any) => 
-        post._id === postId ? {...post, status: newStatus} : post
-      );
-      setPosts(updatedPosts);
-      setSnackbarMessage(`Post status updated to ${newStatus}`);
-      setOpenSnackbar(true);
+      const statusMap = {
+        'active': 'active',
+        'inactive': 'inactive',
+        'in_review': 'in_review'
+      };
+
+      console.log('Updating post status:', {
+        postId,
+        newStatus,
+        statusMapValue: statusMap[newStatus as keyof typeof statusMap]
+      });
+
+      const response = await request.put(`/posts/${postId}`, {
+        status: statusMap[newStatus as keyof typeof statusMap]
+      });
+
+      console.log('API Response:', response.data);
+
+      if (response.data?.success) {
+        const updatedPosts = posts.map((post: any) =>
+          post._id === postId ? { ...post, status: newStatus } : post
+        );
+        setPosts(updatedPosts);
+        setSnackbarMessage(`Post status updated to ${newStatus}`);
+        setOpenSnackbar(true);
+        await fetchPosts();
+      }
     } catch (err: any) {
-      setError("Failed to update post status: " + err.message);
+      console.error('Error updating post status:', {
+        error: err,
+        response: err.response,
+        request: err.request,
+        config: err.config
+      });
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(`Failed to update post status: ${errorMessage}`);
+      setSnackbarMessage(`Failed to update post status: ${errorMessage}`);
+      setOpenSnackbar(true);
     }
   };
 
@@ -165,11 +254,11 @@ const PostsManagementPage = () => {
     history.push(`/posts/${postId}`);
   };
 
-  const handleChangePage = (event: any, newPage: any) => {
+  const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: any) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setLimit(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -179,102 +268,93 @@ const PostsManagementPage = () => {
     setPage(0);
   };
 
-  const handleOrderChange = () => {
-    setOrder(order === "desc" ? "asc" : "desc");
-    setPage(0);
-  };
-
   const getFilteredPosts = useCallback(() => {
-    switch (filterStatus) {
-      case 'approved':
-        return posts.filter((post: Post) => post.status === 'approved');
-      case 'in-review':
-        return posts.filter((post: Post) => post.status === 'in-review');
-      case 'rejected':
-        return posts.filter((post: Post) => post.status === 'rejected');
-      case 'deleted':
-        return posts.filter((post: Post) => post.status === 'deleted');
-      default:
-        return posts;
-    }
-  }, [posts, filterStatus]);
+    if (!searchTerm) return posts;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return posts.filter((post: Post) => {
+      return (
+        post.title?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [posts, searchTerm]);
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-        <Button
-          variant={filterStatus === 'all' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('all')}
-          startIcon={<ArrowDownwardIcon />}
-          className="topButtonSize"
-          sx={{
-            color: filterStatus === 'all' ? '#000' : 'inherit',
-            backgroundColor: filterStatus === 'all' ? '#bfdbfe !important' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'all' ? '#bfdbfe !important' : 'transparent',
-            }
-          }}
-        >
-          All Posts {posts.length}
-        </Button>
-        <Button
-          variant={filterStatus === 'approved' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('approved')}
-          className="topButtonSize"
-          sx={{
-            color: filterStatus === 'approved' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'approved' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'approved' ? '#bfdbfe' : 'transparent',
-            }
-          }}
-        >
-          Approved Posts {posts.filter((p: Post) => p.status === 'approved').length}
-        </Button>
-        <Button
-          variant={filterStatus === 'in-review' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('in-review')}
-          className="topButtonSize"
-          sx={{
-            color: filterStatus === 'in-review' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'in-review' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'in-review' ? '#bfdbfe' : 'transparent',
-            }
-          }}
-        >
-          In Review Posts {posts.filter((p: Post) => p.status === 'in-review').length}
-        </Button>
-        <Button
-          variant={filterStatus === 'rejected' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('rejected')}
-          className="topButtonSize"
-          sx={{
-            color: filterStatus === 'rejected' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'rejected' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'rejected' ? '#bfdbfe' : 'transparent',
-            }
-          }}
-        >
-          Rejected Posts {posts.filter((p: Post) => p.status === 'rejected').length}
-        </Button>
-        <Button
-          variant={filterStatus === 'deleted' ? 'contained' : 'outlined'}
-          onClick={() => setFilterStatus('deleted')}
-          className="topButtonSize"
-          sx={{
-            color: filterStatus === 'deleted' ? '#FFF' : 'inherit',
-            backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
-            '&:hover': {
-              backgroundColor: filterStatus === 'deleted' ? '#bfdbfe' : 'transparent',
-            }
-          }}
-        >
-          Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
-        </Button>
+    <div className="mx-auto p-8">
+    <div className="space-y-2 mb-4">
+      <h1 className="text-3xl font-bold tracking-tight">Posts Management</h1>
+      <p className="text-muted-foreground">
+        Manage and monitor all posts in the platform
+      </p>
+    </div>
+    <Box sx={{ padding: 0 }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* <Button
+            className="topButtonSize"
+            onClick={() => {
+              setOrder(order === "desc" ? "asc" : "desc");
+              setPage(0);
+            }}
+            startIcon={order === "desc" ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
+            variant="outlined"
+          >
+            Date: {order === "desc" ? "Newest First" : "Oldest First"}
+          </Button> */}
+          <Button
+            variant={filterStatus === 'all' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('all')}
+            className="topButtonSize"
+          >
+            All Posts {totalCount}
+          </Button>
+          <Button
+            variant={filterStatus === 'active' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('active')}
+            className="topButtonSize"
+          >
+            Approved Posts {posts.filter((p: Post) => p.status === 'active').length}
+          </Button>
+          <Button
+            variant={filterStatus === 'in_review' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('in_review')}
+            className="topButtonSize"
+          >
+            Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
+          </Button>
+          <Button
+            variant={filterStatus === 'inactive' ? 'contained' : 'outlined'}
+            onClick={() => handleFilterStatusChange('inactive')}
+            className="topButtonSize"
+          >
+            Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
+          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <TextField
+            placeholder="Search by title... (Press Enter to search)"
+            size="small"
+            value={searchInput}
+            onChange={handleInputChange}
+            onKeyDown={handleSearchSubmit}
+            InputProps={{
+              startAdornment: (
+                <>
+                  <SearchIcon sx={{ color: 'action.active', mr: 1 }} />
+                  {searchLoading && <CircularProgress size={20} sx={{ mr: 1 }} />}
+                </>
+              ),
+            }}
+            sx={{
+              width: '300px',
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '4px',
+              },
+            }}
+          />
+        </Box>
       </Box>
-      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 1 }}>
+      <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 2, border: "1px solid #e0e0e0" }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
             <CircularProgress />
@@ -283,71 +363,97 @@ const PostsManagementPage = () => {
           <Typography color="error" sx={{ textAlign: "center", padding: 4 }}>
             {error}
           </Typography>
-        ) : getFilteredPosts().length === 0 ? (
+        ) : posts.length === 0 ? (
           <Box sx={{ textAlign: "center", padding: 4 }}>
-            <Typography variant="h6">No posts available</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Try adjusting your filters or search criteria.
+            <Typography variant="h6">
+              {searchTerm ? `No posts found matching "${searchTerm}"` : "No posts available"}
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {searchTerm 
+                ? "Try different search keywords or clear the search"
+                : "Try adjusting your filters or search criteria"}
+            </Typography>
+            {searchTerm && (
+              <Button
+                onClick={clearSearch}
+                variant="outlined"
+                sx={{ mt: 2 }}
+              >
+                Clear Search
+              </Button>
+            )}
           </Box>
         ) : (
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-          <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-              <TableRow>
-                <TableCell scope="col">Post Title</TableCell>
-                <TableCell scope="col">Post Owner</TableCell>
-                <TableCell scope="col">Account Type</TableCell>
-                <TableCell scope="col">Likes Count</TableCell>
-                <TableCell scope="col">Comments Count</TableCell>
-                <TableCell scope="col">Report Count</TableCell>
-                <TableCell scope="col">Posted on</TableCell>
-                <TableCell scope="col">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {getFilteredPosts().map((post: any) => (
-                <TableRow key={post._id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <TableCell sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
-                    <Typography variant="body2">{post.title}</Typography>
-                  </TableCell>
-                  <TableCell>{post.userId}</TableCell>
-                  <TableCell>{post.postType}</TableCell>
-                  <TableCell>{post.numOfLikes}</TableCell>
-                  <TableCell>{post.numOfComments}</TableCell>
-                  <TableCell>{post.reportCount ?? 0}</TableCell>
-                  <TableCell>{formatRelativeDate(post.createdAt)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <IconButton size="small">
-                          <MoreVertical className="h-4 w-4" />
-                        </IconButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
-                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'approved')}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
-                          Approve
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in-review')}>
-                          <Ban className="mr-2 h-4 w-4 text-red-500" />
-                          Pending Review
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'rejected')}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
-                          Reject
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openDeleteDialog(post._id)}>
-                          <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+            <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200">
+              <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <TableRow>
+                  <TableCell scope="col">Post Title</TableCell>
+                  <TableCell scope="col">Post Owner</TableCell>
+                  <TableCell scope="col" className="text-center-important">Account Type</TableCell>
+                  <TableCell scope="col">Likes Count</TableCell>
+                  <TableCell scope="col">Comments Count</TableCell>
+                  <TableCell scope="col">Report Count</TableCell>
+                  <TableCell scope="col">Posted on</TableCell>
+                  <TableCell scope="col">Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {posts.map((post: any) => (
+                  <TableRow key={post._id} className="bg-white border-b border-gray-200 hover:bg-gray-50">
+                    <TableCell className="underline" sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
+                      <Typography variant="body2">{post.title}</Typography>
+                    </TableCell>
+                    <TableCell>{post.userId?.name || 'Unknown User'}</TableCell>
+                    <TableCell className="text-center-important">{post.userId?.accountType || 'Old User'}</TableCell>
+                    <TableCell className="text-center-important">{post.numOfLikes}</TableCell>
+                    <TableCell className="text-center-important">{post.numOfComments}</TableCell>
+                    <TableCell className="text-center-important">{post.reportCount ?? 0}</TableCell>
+                    <TableCell>{new Date(post.createdAt).toLocaleDateString('en-GB')}</TableCell>
+                    <TableCell className="text-center-important">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton size="small">
+                            <MoreVertical className="h-4 w-4" />
+                          </IconButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'active')}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                            Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'in_review')}>
+                            <Ban className="mr-2 h-4 w-4 text-yellow-500" />
+                            Pending Review
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdatePostStatus(post._id, 'inactive')}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                            Reject
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDeleteDialog(post._id)}>
+                            <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={totalCount}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={limit}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[20, 50, 100]}
+              sx={{
+                borderTop: '1px solid #e0e0e0',
+                backgroundColor: 'white',
+              }}
+            />
           </div>
         )}
       </Card>
@@ -358,13 +464,11 @@ const PostsManagementPage = () => {
           <Typography>Are you sure you want to delete this post?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
+          <Button className="topButtonSize" onClick={closeDeleteDialog} color="primary">
             Cancel
           </Button>
-          <Button
-            // onClick={() => {
-            //   handleDeletePost();
-            // }}
+          <Button className="topButtonSize"
+            onClick={handleDeletePost}
             color="error"
           >
             Delete
@@ -373,11 +477,12 @@ const PostsManagementPage = () => {
       </Dialog>
 
       <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
-        <Alert onClose={() => setOpenSnackbar(false)} severity="success" sx={{ width: "100%" }}>
+        <Alert onClose={() => setOpenSnackbar(false)} severity={error ? "error" : "success"} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
     </Box>
+    </div>
   );
 };
 

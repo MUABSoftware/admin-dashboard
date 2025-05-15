@@ -83,8 +83,8 @@ const LoginPage = () => {
           }}
         >
           <Box textAlign="center" mb={4}>
-            <LockOutlined sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 2 }} />
-            <Typography variant="h4" component="h1" fontWeight="bold" color={theme.palette.primary.main} gutterBottom>
+            <LockOutlined sx={{ fontSize: 40,  mb: 2 }} className="text-CustomPrimary-Color" />
+            <Typography variant="h4" className="text-CustomPrimary-Color" component="h1" fontWeight="bold" gutterBottom>
               Admin Login
             </Typography>
             <Typography variant="body1" color="textSecondary" mb={4}>
@@ -135,6 +135,7 @@ const LoginPage = () => {
               </Grid>
               <Grid item xs={12}>
                 <Button 
+                  className="topButtonSize"
                   type="submit" 
                   variant="contained" 
                   color="primary" 
