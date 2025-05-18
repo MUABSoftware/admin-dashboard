@@ -45,14 +45,14 @@ const CustomDrawer: React.FC<DrawerProps> = ({ mobileOpen, handleDrawerToggle, s
     //     { text: "Hashtag", icon: <Tag />, route: "/categories/hashtag" },
     //   ],
     // },
-    // {
-    //   text: "Bank Account",
-    //   icon: <AccountBalance />,
-    //   subItems: [
-    //     { text: "PayPal Payouts", icon: <MonetizationOn />, route: "/bankaccount/paypal" },
-    //     { text: "Payoneer Payouts", icon: <MonetizationOn />, route: "/bankaccount/payoneer" },
-    //   ],
-    // },
+    {
+      text: "Bank Account",
+      icon: <AccountBalance />,
+      subItems: [
+        { text: "PayPal Payouts", icon: <MonetizationOn />, route: "/bankaccount/paypal" },
+        { text: "Payoneer Payouts", icon: <MonetizationOn />, route: "/bankaccount/payoneer" },
+      ],
+    },
 
     // { text: "Categories", icon: <Category />, route: "/categories/" },
     // { text: "Settings", icon: <Settings />, route: "/settings" },
