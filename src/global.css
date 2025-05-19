@@ -33,3 +33,8 @@ body.customBodyClass .bg-Table-Header-Color {
 body.customBodyClass .text-center-important {
   text-align: center !important;
 }
+
+body.customBodyClass .font-CustomPrimary-Color {
+  color: #fff !important;
+}
+
