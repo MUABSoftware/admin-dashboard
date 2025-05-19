@@ -47,7 +47,7 @@ export function StopBusinessDialog({
       dispatch(updateBusinessStatus({ id: businessId, status: "INACTIVE" }));
       onOpenChange(false);
       toast.success(response.data.message);
-
+      window.location.reload();
     } catch (error: any) {
       console.error("Error updating business status:", error);
       toast.error(error.response.data.message ?? "Failed to update business status");
