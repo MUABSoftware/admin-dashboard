@@ -54,35 +54,45 @@ function BusinessDetailActionButtons({ business }: BusinessDetailActionsProps) {
 
   return (
     <div className="flex gap-2">
-      <Button
-        onClick={() => setIsStopDialogOpen(true)}
-        disabled={business.status === 'INACTIVE'}
-        variant="destructive"
-        className="flex items-center bg-Table-Header-Color font-CustomPrimary-Color"
-      >
-        <Ban className="h-4 w-4" />
-        Stop Business
-      </Button>
+{business.status === 'INACTIVE' ? (
+  <span className="text-muted-foreground"></span>
+) : (
+  <Button
+    onClick={() => setIsStopDialogOpen(true)}
+    variant="destructive"
+    className="flex items-center bg-Table-Header-Color font-CustomPrimary-Color"
+  >
+    <Ban className="h-4 w-4" />
+    Stop Business
+  </Button>
+)}
 
-      <Button
-        onClick={handleApproveBusiness}
-        disabled={business.status === 'ACTIVE'}
-        variant="default"
-        className="flex items-center bg-Table-Header-Color font-CustomPrimary-Color"
-      >
-        <CheckCircle className="h-4 w-4" />
-        Approve Business
-      </Button>
 
-      <Button
-        onClick={() => setIsRejectDialogOpen(true)}
-        disabled={business.status === 'REJECTED' || business.status === 'PENDING'}
-        variant="secondary"
-        className="flex items-center bg-Table-Header-Color font-CustomPrimary-Color"
-      >
-        <Ban className="h-4 w-4" />
-        Reject Business
-      </Button>
+{business.status === 'ACTIVE' ? (
+  <span className="text-muted-foreground"></span>
+) : (
+  <Button
+    onClick={handleApproveBusiness}
+    variant="secondary"
+    className="flex items-center bg-Table-Header-Color font-CustomPrimary-Color"
+  >
+    <CheckCircle className="h-4 w-4" />
+    Approve Business
+  </Button>
+)}
+
+{business.status === 'REJECTED' || business.status === 'PENDING' ? (
+  <span className="text-muted-foreground"></span>
+) : (
+  <Button
+    onClick={() => setIsRejectDialogOpen(true)}
+    variant="secondary"
+    className="flex items-center bg-Table-Header-Color font-CustomPrimary-Color"
+  >
+    <Ban className="h-4 w-4" />
+    Reject Business
+  </Button>
+)}
 
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent style={{ backgroundColor: "#fff" }}>
