@@ -149,7 +149,7 @@ export function BusinessSpacesTables() {
         <div>
 
           <Button
-            className={`font-CustomPrimary-Color px-4 bg-Table-Header-Color me-2 py-2 rounded-md ${activeTab === 'all' ? 'bg-blue-500' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'all' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('all');
               setSelectedBusinesses([]);
@@ -161,7 +161,7 @@ export function BusinessSpacesTables() {
 
           </Button>
           <Button
-            className={`font-CustomPrimary-Color px-4 bg-Table-Header-Color me-2 py-2 rounded-md ${activeTab === 'stop' ? 'bg-red-500 text-white' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'stop' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('stop');
               setSelectedBusinesses([]);
@@ -179,7 +179,7 @@ export function BusinessSpacesTables() {
             }
           </Button>
           <Button
-            className={`font-CustomPrimary-Color px-4 bg-Table-Header-Color me-2 py-2 rounded-md ${activeTab === 'approved' ? 'bg-green-500 text-white' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'approved' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('approved');
               setSelectedBusinesses([]);
@@ -197,7 +197,7 @@ export function BusinessSpacesTables() {
           </Button>
 
           <Button
-            className={`font-CustomPrimary-Color px-4 bg-Table-Header-Color me-2 py-2 rounded-md ${activeTab === 'reject' ? 'bg-red-500 text-white' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'reject' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('reject');
               setSelectedBusinesses([]);

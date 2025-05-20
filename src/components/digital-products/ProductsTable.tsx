@@ -328,7 +328,7 @@ function ProductsTables() {
         <div className="flex justify-between gap-2 mb-4">
           <div>
           <Button
-            className={`bg-blue-500 text-white me-2 px-4 py-2 rounded-md ${currentTab === 'sortedByDate' ? 'bg-blue-500' : 'bg-blue-200 text-black'}`}
+            className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'sortedByDate' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('sortedByDate');
               handleSortedProductsByDate();
@@ -340,7 +340,7 @@ function ProductsTables() {
           </Button>
             
           <Button
-            className={`bg-blue-500 text-white me-2 px-4 py-2 rounded-md ${currentTab === 'all' ? 'bg-blue-500' : 'bg-blue-200 text-black'}`}
+            className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'all' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('all');
               setSelectedProducts([]);
@@ -351,7 +351,7 @@ function ProductsTables() {
             All Products {digitalProducts.length}
           </Button>
           <Button
-            className={`bg-green-500 text-white px-4 me-2 py-2 rounded-md ${currentTab === 'approved' ? 'bg-green-500' : 'bg-blue-200 text-black'}`}
+            className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'approved' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('approved');
               setSelectedProducts([]);
@@ -362,7 +362,7 @@ function ProductsTables() {
             Approved Products {digitalProducts.filter(product => product.status === "active").length}
           </Button>
           <Button
-            className={`bg-blue-500 text-white px-4 me-2 py-2 rounded-md ${currentTab === 'in_review' ? 'bg-yellow-500' : 'bg-blue-200 text-black'}`}
+            className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'in_review' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('in_review');
               setSelectedProducts([]);
@@ -373,7 +373,7 @@ function ProductsTables() {
             In Review Products {digitalProducts.filter(product => product.status === "in_review").length}
           </Button>
           <Button
-            className={`bg-blue-500 text-white px-4 me-2 py-2 rounded-md ${currentTab === 'rejected' ? 'bg-red-500' : 'bg-blue-200 text-black'}`}
+            className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'rejected' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('rejected');
               setSelectedProducts([]);
@@ -384,7 +384,7 @@ function ProductsTables() {
             Rejected Products {digitalProducts.filter(product => product.status === "rejected").length}
           </Button>
           <Button
-            className={`bg-blue-500 text-white px-4 me-2 py-2 rounded-md ${currentTab === 'stopped' ? 'bg-red-500' : 'bg-blue-200 text-black'}`}
+            className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'stopped' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('stopped');
               setSelectedProducts([]);
