@@ -37,19 +37,19 @@ export function StopBusinessDialog({
     try {
       if (!note.trim()) {
         toast.error("Please provide a reason for stopping this business space.");
-        return; // Exit the function if the note is empty
+        return; 
       }
-      console.log(note);
+      // console.log(note);
       const response = await request.patch(`/business/${businessId}/INACTIVE`, {
         reason: note,
       });
-      console.log("Product status updated successfully", response.data);
+      // console.log("Product status updated successfully", response.data);
       dispatch(updateBusinessStatus({ id: businessId, status: "INACTIVE" }));
       onOpenChange(false);
       toast.success(response.data.message);
-
+      window.location.reload();
     } catch (error: any) {
-      console.error("Error updating business status:", error);
+      // console.error("Error updating business status:", error);
       toast.error(error.response.data.message ?? "Failed to update business status");
     }
   };

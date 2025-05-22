@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import request from "@src/config/axios"
 import { BusinessSpaceDetail, ApiResponse, } from "@src/types"
 import { Separator } from "@src/components/ui/separator"
+import { BusinessDetailActions } from "@src/components/business-spaces/BusinessDetailActions"
 
 export default function BusinessSpaceDetails() {
     const { id } = useParams()
@@ -158,6 +159,7 @@ export default function BusinessSpaceDetails() {
                     <h2 className="text-2xl font-bold tracking-tight">{space.tradeName}</h2>
                     <p className="text-muted-foreground">Business ID: {space.businessId}</p>
                 </div>
+                <BusinessDetailActions business={space} />
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">

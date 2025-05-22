@@ -30,7 +30,7 @@ import { updateBusinessStatus } from "../store/Businessspaceslice";
 import { Warning } from "@mui/icons-material";
 // import { CardDescription } from "../ui/card";
 import { CardContent } from "@mui/material";
-import { BusinessSpace } from "@src/types";
+import { BusinessSpace, BusinessSpaceDetail } from "@src/types";
 // import { red } from "@mui/material/colors";
 
 // const BUSINESS_STATUS = {
@@ -76,9 +76,7 @@ export function BusinessSpaceActionss({ business }: BusinessSpaceActionsProps,) 
     dispatch(updateBusinessStatus({ id: business._id, status: "PENDING" }));
     setIsRejectDialogOpen(false);
     router.refresh();
-
-
-
+    
     toast.success(response.data.message);
   };
 
@@ -124,7 +122,7 @@ export function BusinessSpaceActionss({ business }: BusinessSpaceActionsProps,) 
             <Ban className={`mr-2 h-4 w-4 text-red-500 ${business.status === 'INACTIVE' ? 'opacity-50  cursor-not-allowed text-gray-400' : ''}`} />
             Stop Business
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleApproveBusiness(business)} disabled={business.status === 'ACTIVE'}>
+          <DropdownMenuItem onClick={() => handleApproveBusiness(business as unknown as BusinessSpace)} disabled={business.status === 'ACTIVE'}>
             <CheckCircle className={`mr-2 h-4 w-4 text-green-500 ${business.status === 'ACTIVE' ? 'opacity-50 cursor-not-allowed text-gray-400' : ''}`} />
             Approve Business
           </DropdownMenuItem>

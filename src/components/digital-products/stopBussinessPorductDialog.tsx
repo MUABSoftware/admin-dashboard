@@ -54,6 +54,7 @@ import {
               toast.success("Product stopped successfully");
               onOpenChange(false);
               setNote("");
+              window.location.reload();
             }
           } catch (error) {
             console.error("Error stopping product:", error);

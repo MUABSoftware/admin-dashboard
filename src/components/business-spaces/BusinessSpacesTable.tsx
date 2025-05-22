@@ -149,7 +149,7 @@ export function BusinessSpacesTables() {
         <div>
 
           <Button
-            className={`bg-blue-500 text-white px-4 me-2 py-2 rounded-md ${activeTab === 'all' ? 'bg-blue-500' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'all' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('all');
               setSelectedBusinesses([]);
@@ -161,7 +161,7 @@ export function BusinessSpacesTables() {
 
           </Button>
           <Button
-            className={`bg-blue-500  px-4 py-2 me-2 rounded-md ${activeTab === 'stop' ? 'bg-red-500 text-white' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'stop' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('stop');
               setSelectedBusinesses([]);
@@ -179,7 +179,7 @@ export function BusinessSpacesTables() {
             }
           </Button>
           <Button
-            className={`bg-blue-500 text-white px-4 py-2 me-2 rounded-md ${activeTab === 'approved' ? 'bg-green-500 text-white' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'approved' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('approved');
               setSelectedBusinesses([]);
@@ -197,7 +197,7 @@ export function BusinessSpacesTables() {
           </Button>
 
           <Button
-            className={`bg-blue-500 text-white px-4 py-2   rounded-md ${activeTab === 'reject' ? 'bg-red-500 text-white' : 'bg-blue-200 text-black'}`}
+            className={`font-CustomPrimary-Color text-white me-2 rounded-md ${activeTab === 'reject' ? 'bg-Table-Header-Color' : 'bg-blue-200 text-black'}`}
             onClick={() => {
               setActiveTab('reject');
               setSelectedBusinesses([]);
@@ -291,11 +291,21 @@ export function BusinessSpacesTables() {
                     </a>
                   </span>
                 </TableCell>
-                <TableCell>
-                  {business.legalName}
+                <TableCell> 
+                <p className="truncate">
+                  {business.legalName.length > 50 ? business.legalName.slice(0, 50) + '...' : business.legalName}
+                </p>
                 </TableCell>
-                <TableCell>{business.tradeName || '-'}</TableCell>
-                <TableCell>{business.category}</TableCell>
+                <TableCell>
+                <p className="truncate">
+                  {business.tradeName.length > 50 ? business.tradeName.slice(0, 50) + '...' : business.tradeName}
+                </p>
+                </TableCell>
+                <TableCell>
+                <p className="truncate">
+                  {business.category.length > 50 ? business.category.slice(0, 50) + '...' : business.category}
+                </p>
+                </TableCell>
                 <TableCell>
                   <Badge className={statusColor(business.status)}>
                     {business.status === 'PENDING' ? 'REJECTED' : business.status.toUpperCase()}

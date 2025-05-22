@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Avatar, Box, Button, CardMedia, CircularProgress, Divider, Grid, Modal, Paper, Stack, Tab, Tabs, Typography, useTheme } from "@mui/material";
+import { Avatar, Box, Button, CardMedia, CircularProgress, Divider, Grid, Modal, Paper, Stack, Tab, Tabs, Typography, useTheme, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 // import Chart from "react-apexcharts";
 import request from "@src/config/axios";
-import { useParams } from "next/navigation";
-
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import dynamic from "next/dynamic";
+import { Item } from "@radix-ui/react-dropdown-menu";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -19,6 +20,8 @@ const AdminPostDetails = () => {
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const router = useRouter();
 
   const theme = useTheme();
   const { id } = useParams();
@@ -44,6 +47,59 @@ const AdminPostDetails = () => {
 
   const loadMoreMedia = () => {
     setMediaPage(mediaPage + 1);
+  };
+
+  const handleUpdatePostStatus = async (newStatus: string) => {
+    try {
+      const statusMap = {
+        'active': 'active',
+        'inactive': 'inactive',
+        'in_review': 'in_review'
+      };
+
+      const response = await request.put(`/posts/${id}`, {
+        status: statusMap[newStatus as keyof typeof statusMap]
+      });
+
+      if (response.data?.success) {
+        // Update local state
+        setPost({
+          ...post,
+          status: newStatus
+        });
+        
+        // Show success notification
+        toast.success(`Post status updated to ${newStatus}`);
+      }
+    } catch (err: any) {
+      console.error('Error updating post status:', {
+        error: err,
+        response: err.response,
+        request: err.request,
+        config: err.config
+      });
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(`Failed to update post status: ${errorMessage}`);
+      toast.error(`Failed to update post status: ${errorMessage}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await request.delete(`/posts/${id}`);
+      toast.success("Post successfully deleted!");
+      router.push('/posts'); // Redirect to posts list
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message;
+      setError("Failed to delete post: " + errorMessage);
+      toast.error("Failed to delete post: " + errorMessage);
+    } finally {
+      setOpenDialog(false);
+    }
+  };
+
+  const openDeleteDialog = () => {
+    setOpenDialog(true);
   };
 
   if (loading) {
@@ -122,6 +178,43 @@ const AdminPostDetails = () => {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+
+      {/* <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+        <ButtonGroup variant="contained" sx={{ mb: 2 }}>
+          <Button
+            color="success"
+            onClick={() => handleUpdatePostStatus('active')}
+            disabled={post?.status === 'active'}
+            sx={{ mr: 1 }}
+          >
+            Approve
+          </Button>
+          <Button
+            color="warning"
+            onClick={() => handleUpdatePostStatus('in_review')}
+            disabled={post?.status === 'in_review'}
+            sx={{ mr: 1 }}
+          >
+            Pending Review
+          </Button>
+          <Button
+            color="error"
+            onClick={() => handleUpdatePostStatus('inactive')}
+            disabled={post?.status === 'inactive'}
+            sx={{ mr: 1 }}
+          >
+            Reject
+          </Button>
+          <Button
+            color="error"
+            onClick={openDeleteDialog}
+            variant="outlined"
+          >
+            Delete
+          </Button>
+        </ButtonGroup>
+      </Paper> */}
+
       {/* Post Details */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Stack direction="row" spacing={2}>
@@ -135,6 +228,52 @@ const AdminPostDetails = () => {
               {description}
             </Typography>
           </Stack>
+        </Stack>
+        <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+          <Button
+            color="success"
+            onClick={() => handleUpdatePostStatus('active')}
+            disabled={post?.status === 'active'}
+            className="bg-Table-Header-Color"
+            sx={{ 
+              mr: 1,
+              display: post?.status === 'active' ? 'none' : 'inline-flex'
+            }}
+          >
+            Approve
+          </Button>
+          <Button
+            color="warning"
+            onClick={() => handleUpdatePostStatus('in_review')}
+            disabled={post?.status === 'in_review'}
+            className="bg-Table-Header-Color"
+            sx={{ 
+              mr: 1,
+              display: post?.status === 'in_review' ? 'none' : 'inline-flex'
+            }}
+          >
+            Pending Review
+          </Button>
+          <Button
+            color="error"
+            onClick={() => handleUpdatePostStatus('inactive')}
+            disabled={post?.status === 'inactive'}
+            className="bg-Table-Header-Color"
+            sx={{ 
+              mr: 1,
+              display: post?.status === 'inactive' ? 'none' : 'inline-flex'
+            }}
+          >
+            Reject
+          </Button>
+          <Button
+            // color="error"
+            onClick={openDeleteDialog}
+            variant="outlined"
+            className="bg-Table-Header-Color"
+          >
+            <span className="text-white">Delete</span>
+          </Button>
         </Stack>
         <Divider sx={{ my: 2 }} />
         <Stack direction="row" spacing={2}>
@@ -250,6 +389,22 @@ const AdminPostDetails = () => {
           </Box>
         )}
       </Box>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this post?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

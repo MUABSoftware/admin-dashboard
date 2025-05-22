@@ -53,7 +53,7 @@ const LoginPage = () => {
         flexDirection: 'column'
       }}
     >
-      <IconButton 
+      {/* <IconButton 
         onClick={toggleTheme}
         sx={{ 
           position: 'absolute',
@@ -62,7 +62,7 @@ const LoginPage = () => {
         }}
       >
         {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
-      </IconButton>
+      </IconButton> */}
 
       <Container
         maxWidth="xs"

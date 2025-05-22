@@ -26,27 +26,28 @@ import {
 // import { useIsMobile } from "@src/hooks/use-mobile"
 import request from "@src/config/axios"
 import { toast } from "react-toastify"
+import { ProductDetailActions } from "@src/components/digital-products/ProductDetailActions"
 
 interface Product {
   _id: string;
+  creator: string;
   title: string;
   description: string;
-  benefits: string[];
-  tags: string[];
+  likesCount: number;
+  commentsCount: number;
   introMedia: {
     video: {
-      duration: number;
       name: string;
       url: string;
+      duration?: number;
     };
     coverImage: {
       name: string;
       url: string;
     };
   };
-  price: number;
-  currency: string;
-  creator: string;
+  tags: string[];
+  benefits: string[];
   sections: {
     sectionTitle: string;
     items: {
@@ -55,34 +56,45 @@ interface Product {
       description: string;
       mediaUrl: string[];
       downloadable: boolean;
-      thumbnailUrl?: string;
+      thumbnailUrl: string;
       duration: number;
       size: number;
-      ext?: string;
+      ext: string;
       _id: string;
     }[];
     _id: string;
   }[];
+  price: number;
+  category: { name: string; _id: string; }[];
+  currency: string;
+  pricingModel: string;
+  refundPolicy: string;
+  platformFees: number;
+  status: "active" | "rejected" | "stopped" | "in_review";
+  rating: number;
+  totalReviews: number;
+  totalSales: number;
   mediaInfo: {
-    videos: {
-      count: number;
-      duration: number;
-    };
     audios: {
       count: number;
       duration: number;
     };
-    imagesCount: number;
     documentsCount: number;
+    imagesCount: number;
+    videos: {
+      count: number;
+      duration: number;
+    };
   };
   analytics: {
     views: number;
     purchases: number;
     conversionRate: number;
   };
-  status: string;
+  isLiked: boolean;
   createdAt: string;
   updatedAt: string;
+  __v: number;
 }
 
 export default function DigitalProductView() {
@@ -91,16 +103,35 @@ export default function DigitalProductView() {
   // const [isOpen, setIsOpen] = useState(true)
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dialogRef, setDialogRef] = useState<HTMLDialogElement | null>(null)
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const response = await request.get(`/product/${id}`)
-        setProduct(response.data)
+    
+        const productData = {
+          ...response.data,
+          benefits: response.data?.benefits || [],
+          tags: response.data?.tags || [],
+          sections: (response.data?.sections as Product['sections'])?.map(section => ({
+            ...section,
+            items: section?.items || []
+          })) || [],
+          introMedia: {
+            video: response.data?.introMedia?.video || null,
+            coverImage: response.data?.introMedia?.coverImage || { url: '', name: '' }
+          },
+          mediaInfo: {
+            audios: response.data?.mediaInfo?.audios || { count: 0, duration: 0 },
+            videos: response.data?.mediaInfo?.videos || { count: 0, duration: 0 },
+            documentsCount: response.data?.mediaInfo?.documentsCount || 0,
+            imagesCount: response.data?.mediaInfo?.imagesCount || 0
+          }
+        } as Product
+        setProduct(productData)
         setLoading(false)
-        console.log(response.data, "response.data")
       } catch (error) {
-        console.error("Error fetching product:", error)
         toast.error("Failed to fetch product details")
         setLoading(false)
       }
@@ -108,6 +139,12 @@ export default function DigitalProductView() {
 
     if (id) {
       fetchProduct()
+    }
+
+    return () => {
+      if (dialogRef) {
+        dialogRef.remove()
+      }
     }
   }, [id])
 
@@ -137,6 +174,12 @@ export default function DigitalProductView() {
   const openMediaDialog = (type: string, url: string, title: string) => {
     if (typeof window === 'undefined') return;
     
+    // Remove existing dialog if any
+    if (dialogRef) {
+      dialogRef.remove()
+      setDialogRef(null)
+    }
+    
     const dialog = document.createElement('dialog');
     dialog.innerHTML = `
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
@@ -156,9 +199,12 @@ export default function DigitalProductView() {
       </div>
     `;
     document.body.appendChild(dialog);
+    setDialogRef(dialog);
     dialog.showModal();
+    
     dialog.addEventListener('close', () => {
       dialog.remove();
+      setDialogRef(null);
     });
   };
 
@@ -170,8 +216,8 @@ export default function DigitalProductView() {
           <p className="text-muted-foreground">Digital Product Details</p>
         </div>
         
-        <div className="flex space-x-2">
-          <Button variant="outline" asChild>
+        <div className="flex items-center space-x-2">
+          {/* <Button variant="outline" asChild>
             <a 
               href={`https://muab.network/profile/${product.creator}`}
               target="_blank" 
@@ -181,7 +227,8 @@ export default function DigitalProductView() {
               <ExternalLink className="h-4 w-4" />
               <span>MUAB Network Profile</span>
             </a>
-          </Button>
+          </Button> */}
+          <ProductDetailActions product={product} />
         </div>
       </div>
 
@@ -199,7 +246,7 @@ export default function DigitalProductView() {
             <div>
               <h3 className="text-lg font-medium">Benefits</h3>
               <ul className="mt-2 space-y-1 pl-5 text-sm">
-                {product.benefits.filter(benefit => benefit).map((benefit, index) => (
+                {product.benefits?.filter(benefit => benefit)?.map((benefit, index) => (
                   <li key={index} className="list-disc">{benefit}</li>
                 ))}
               </ul>
@@ -208,7 +255,7 @@ export default function DigitalProductView() {
             <div>
               <h3 className="text-lg font-medium">Tags</h3>
               <div className="mt-2 flex flex-wrap gap-2">
-                {product.tags.map((tag, index) => (
+                {product.tags?.map((tag, index) => (
                   <Badge key={index} variant="secondary">#{tag}</Badge>
                 ))}
               </div>
@@ -222,16 +269,18 @@ export default function DigitalProductView() {
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center">
             <div className="relative aspect-video w-full overflow-hidden rounded-md">
-              <img 
-                src={product.introMedia.coverImage.url} 
-                alt={product.title} 
-                className="h-full w-full object-cover"
-              />
-              {product.introMedia.video && (
+              {product?.introMedia?.coverImage?.url && (
+                <img 
+                  src={product.introMedia.coverImage.url} 
+                  alt={product.title} 
+                  className="h-full w-full object-cover"
+                />
+              )}
+              {product?.introMedia?.video?.url && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                   <Button 
                     variant="outline" 
-                    className="bg-white/20 backdrop-blur-sm"
+                    className="bg-Table-Header-Color text-white"
                     onClick={() => {
                       openMediaDialog('video', product.introMedia.video.url, product.title);
                     }}
@@ -265,19 +314,19 @@ export default function DigitalProductView() {
         <CardHeader>
           <CardTitle>Course Content</CardTitle>
           <CardDescription>
-            {product.sections.length} sections • {product.sections.reduce((acc, section) => acc + section.items.length, 0)} elements
+            {product.sections?.length || 0} sections • {product.sections?.reduce((acc, section) => acc + (section.items?.length || 0), 0) || 0} elements
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
-            {product.sections.map((section) => (
+            {product.sections?.map((section) => (
               <AccordionItem key={section._id} value={section._id}>
                 <AccordionTrigger className="text-lg font-medium">
                   {section.sectionTitle}
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4 pl-4">
-                    {section.items.map((item) => (
+                    {section.items?.map((item) => (
                       <div key={item._id} className="space-y-2 border-l border-border pl-4">
                         <div className="flex items-start justify-between">
                           <div>
@@ -290,7 +339,7 @@ export default function DigitalProductView() {
                               )}
                             </p>
                           </div>
-                          {item.mediaUrl.length > 0 && (
+                          {item?.mediaUrl?.length > 0 && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
