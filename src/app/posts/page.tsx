@@ -53,7 +53,7 @@ const PostsManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [totalCount, setTotalCount] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [order, setOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("createdAt");
   const [searchTerm, setSearchTerm] = useState("");
@@ -78,12 +78,12 @@ const PostsManagementPage = () => {
     status: string;
   };
 
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('active');
 
   useEffect(() => {
     fetchPosts();
-  }, [page, limit, order, sortBy, searchTerm]);
-
+  }, [page, limit, order, sortBy, searchTerm, filterStatus]);
+  
   const fetchPosts = async () => {
     setLoading(true);
     setError("");
@@ -94,8 +94,9 @@ const PostsManagementPage = () => {
         order,
         page,
         limit,
+        status: filterStatus
       };
-
+      
       const { data } = await request.get("/posts", {
         params,
       });
@@ -104,7 +105,6 @@ const PostsManagementPage = () => {
       setMatchedRecord(data.matched);
     } catch (err) {
       console.log(err);
-
       setError("Failed to fetch posts");
     } finally {
       setLoading(false);
@@ -173,6 +173,11 @@ const PostsManagementPage = () => {
     setPage(0);
   };
 
+  const handleFilterStatusChange = (newStatus: string) => {
+    setFilterStatus(newStatus);
+    setPage(0);
+  };
+
   const getFilteredPosts = useCallback(() => {
     switch (filterStatus) {
       case 'approved':
@@ -209,13 +214,19 @@ const PostsManagementPage = () => {
       console.log('API Response:', response.data);
 
       if (response.data?.success) {
+        // Update local state first for immediate feedback
         const updatedPosts = posts.map((post: any) =>
           post._id === postId ? { ...post, status: newStatus } : post
         );
         setPosts(updatedPosts as any);
-        // setSnackbarMessage(`Post status updated to ${newStatus}`);
+        
+        // Show success notification
         toast.success(`Post status updated to ${newStatus}`);
-        setOpenSnackbar(true);
+        
+        // Update filter to match new status
+        handleFilterStatusChange(newStatus);
+        
+        // Refresh posts with new filter
         await fetchPosts();
       }
     } catch (err: any) {
@@ -227,9 +238,7 @@ const PostsManagementPage = () => {
       });
       const errorMessage = err.response?.data?.message || err.message;
       setError(`Failed to update post status: ${errorMessage}`);
-      // setSnackbarMessage(`Failed to update post status: ${errorMessage}`);
       toast.error(`Failed to update post status: ${errorMessage}`);
-      setOpenSnackbar(true);
     }
   };
 
@@ -269,10 +278,10 @@ const PostsManagementPage = () => {
             marginBottom: 3,
             padding: 1,
             borderRadius: 1,
-            position: "sticky",
-            top: 64,
-            zIndex: 1,
-            backgroundColor: theme.palette.background.paper,
+            // position: "sticky",
+            // top: 64,
+            // zIndex: 1,
+            // backgroundColor: theme.palette.background.paper,
           }}
         >
           <Grid container spacing={2} alignItems="center">
@@ -317,24 +326,30 @@ const PostsManagementPage = () => {
             </Grid>
             <Grid item>
               <Button
+                variant={filterStatus === 'active' ? 'contained' : 'outlined'}
+                onClick={() => handleFilterStatusChange('active')}
                 className="topButtonSize cursor-pointer"
-          >
-            Approved Posts {posts.filter((p: Post) => p.status === 'active').length}
-          </Button>
+              >
+                Approved Posts {posts.filter((p: Post) => p.status === 'active').length}
+              </Button>
             </Grid>
             <Grid item>
               <Button
+                variant={filterStatus === 'in_review' ? 'contained' : 'outlined'}
+                onClick={() => handleFilterStatusChange('in_review')}
                 className="topButtonSize cursor-pointer"
-          >
-            Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
-          </Button>
+              >
+                Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
+              </Button>
             </Grid>
             <Grid item>
               <Button
-                className="topButtonSize  cursor-pointer"
-          >
-            Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
-          </Button>
+                variant={filterStatus === 'inactive' ? 'contained' : 'outlined'}
+                onClick={() => handleFilterStatusChange('inactive')}
+                className="topButtonSize cursor-pointer"
+              >
+                Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
+              </Button>
             </Grid>
             {/* <Grid item>
               <TablePagination
@@ -351,7 +366,6 @@ const PostsManagementPage = () => {
         </Card>
 
         {/* <Box sx={{ display: 'flex', gap: 1, mb: 3 }}> */}
-          
           {/* <Button
             variant={filterStatus === 'all' ? 'contained' : 'outlined'}
             onClick={() => handleFilterStatusChange ('all')}
@@ -419,23 +433,23 @@ const PostsManagementPage = () => {
           </Button> */}
         {/* </Box> */}
         <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 1 }}>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Typography color="error" sx={{ textAlign: "center", padding: 4 }}>
-              {error}
-            </Typography>
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Typography color="error" sx={{ textAlign: "center", padding: 4 }}>
+            {error}
+          </Typography>
           ) : getFilteredPosts().length === 0 ? (
-            <Box sx={{ textAlign: "center", padding: 4 }}>
+          <Box sx={{ textAlign: "center", padding: 4 }}>
               <Typography variant="h6">No posts available</Typography>
-              <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
                 Try adjusting your filters or search criteria.
-              </Typography>
-            </Box>
-          ) : (
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+            </Typography>
+          </Box>
+        ) : (
+          <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200">
               <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <TableRow>
@@ -469,19 +483,31 @@ const PostsManagementPage = () => {
                           </IconButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" style={{ backgroundColor: '#fff' }}>
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleUpdatePostStatus(post._id, 'active')}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-gray-100" 
+                            onClick={() => handleUpdatePostStatus(post._id, 'active')}
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-circle-check-big mr-2 h-4 w-4 text-green-500"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
                             Approve
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleUpdatePostStatus(post._id, 'in_review')}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-gray-100" 
+                            onClick={() => handleUpdatePostStatus(post._id, 'in_review')}
+                          >
                             <Ban className="mr-2 h-4 w-4 text-yellow-500" />
                             Pending Review
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleUpdatePostStatus(post._id, 'inactive')}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-gray-100" 
+                            onClick={() => handleUpdatePostStatus(post._id, 'inactive')}
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-circle mr-2 h-4 w-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
                             Reject
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => openDeleteDialog(post._id)}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-gray-100" 
+                            onClick={() => openDeleteDialog(post._id)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                             Delete
                           </DropdownMenuItem>
@@ -492,7 +518,7 @@ const PostsManagementPage = () => {
                 ))}
               </TableBody>
             </Table>
-            {/* <TablePagination
+            <TablePagination
               component="div"
               count={totalCount}
               page={page}
@@ -504,47 +530,37 @@ const PostsManagementPage = () => {
                 borderTop: '1px solid #e0e0e0',
                 backgroundColor: 'white',
               }}
-            /> */}
+            />
           </div>
-          )}
-        </Card>
+        )}
+      </Card>
 
-        <Dialog open={openDialog} onClose={closeDeleteDialog}>
-          <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogContent>
-            <Typography>Are you sure you want to delete this post?</Typography>
-          </DialogContent>
-          <DialogActions>
+      <Dialog open={openDialog} onClose={closeDeleteDialog}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this post?</Typography>
+        </DialogContent>
+        <DialogActions>
             <Button onClick={closeDeleteDialog} color="primary">
-              Cancel
-            </Button>
+            Cancel
+          </Button>
             <Button
               onClick={() => {
                 handleDeletePost();
               }}
-              color="error"
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+            color="error"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-        <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
+      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
           <Alert onClose={() => setOpenSnackbar(false)} severity="success" sx={{ width: "100%" }}>
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-            <Grid item>
-              <TablePagination
-                component="div"
-                count={totalCount}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={limit}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-              />
-            </Grid>
-      </Box>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
     </div>
   );
 };
