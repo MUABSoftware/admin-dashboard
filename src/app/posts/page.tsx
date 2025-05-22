@@ -317,7 +317,7 @@ const PostsManagementPage = () => {
                 </span>
               </Button>
             </Grid>
-            <Grid item>
+            {/* <Grid item>
               <Button
               className="topButtonSize cursor-pointer"
             >
@@ -350,7 +350,7 @@ const PostsManagementPage = () => {
               >
                 Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
               </Button>
-            </Grid>
+            </Grid> */}
             {/* <Grid item>
               <TablePagination
                 component="div"
