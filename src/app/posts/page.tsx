@@ -50,6 +50,7 @@ const PostsManagementPage = () => {
   const theme = useTheme();
   const history = useRouter();
   const [posts, setPosts] = useState([]);
+  const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [totalCount, setTotalCount] = useState(0);
@@ -59,6 +60,7 @@ const PostsManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [matchedRecord, setMatchedRecord] = useState(0);
+  const [filterStatus, setFilterStatus] = useState('');
 
   const [openDialog, setOpenDialog] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
@@ -78,11 +80,10 @@ const PostsManagementPage = () => {
     status: string;
   };
 
-  const [filterStatus, setFilterStatus] = useState('active');
 
   useEffect(() => {
     fetchPosts();
-  }, [page, limit, order, sortBy, searchTerm, filterStatus]);
+  }, [page, limit, order, sortBy, searchTerm ]);
   
   const fetchPosts = async () => {
     setLoading(true);
@@ -94,13 +95,14 @@ const PostsManagementPage = () => {
         order,
         page,
         limit,
-        status: filterStatus
+        status: ""
       };
       
       const { data } = await request.get("/posts", {
         params,
       });
       setPosts(data.data);
+
       setTotalCount(data.totalCount);
       setMatchedRecord(data.matched);
     } catch (err) {
@@ -110,6 +112,9 @@ const PostsManagementPage = () => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    setFilteredPosts(posts);
+  }, [posts]);
 
   const handleSearchChange = useCallback(
     debounce((value) => {
@@ -174,24 +179,21 @@ const PostsManagementPage = () => {
   };
 
   const handleFilterStatusChange = (newStatus: string) => {
-    setFilterStatus(newStatus);
     setPage(0);
-  };
-
-  const getFilteredPosts = useCallback(() => {
-    switch (filterStatus) {
-      case 'approved':
-        return posts.filter((post: any) => post.status === 'approved');
-      case 'in-review':
-        return posts.filter((post: any) => post.status === 'in-review');
-      case 'rejected':
-        return posts.filter((post: any) => post.status === 'rejected');
-      case 'stopped':
-        return posts.filter((post: any) => post.status === 'stopped');
+    setFilterStatus(newStatus);
+    switch (newStatus) {
+      case 'all':
+        return setFilteredPosts(posts);
+      case 'active':
+        return setFilteredPosts(posts.filter((post: any) => post.status === 'active'));
+      case 'in_review':
+        return setFilteredPosts(posts.filter((post: any) => post.status === 'in_review'));
+      case 'inactive':
+        return setFilteredPosts(posts.filter((post: any) => post.status === 'inactive'));
       default:
-        return posts;
+        return setFilteredPosts(posts);
     }
-  }, [posts, filterStatus]);
+  };
 
   const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
     try {
@@ -214,20 +216,17 @@ const PostsManagementPage = () => {
       console.log('API Response:', response.data);
 
       if (response.data?.success) {
-        // Update local state first for immediate feedback
         const updatedPosts = posts.map((post: any) =>
           post._id === postId ? { ...post, status: newStatus } : post
         );
         setPosts(updatedPosts as any);
         
-        // Show success notification
         toast.success(`Post status updated to ${newStatus}`);
         
-        // Update filter to match new status
         handleFilterStatusChange(newStatus);
         
         // Refresh posts with new filter
-        await fetchPosts();
+        // await fetchPosts();
       }
     } catch (err: any) {
       console.error('Error updating post status:', {
@@ -317,8 +316,9 @@ const PostsManagementPage = () => {
                 </span>
               </Button>
             </Grid>
-            {/* <Grid item>
+            <Grid item>
               <Button
+              onClick={() => handleFilterStatusChange('all')}
               className="topButtonSize cursor-pointer"
             >
               All Posts {totalCount}
@@ -350,7 +350,7 @@ const PostsManagementPage = () => {
               >
                 Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
               </Button>
-            </Grid> */}
+            </Grid>
             {/* <Grid item>
               <TablePagination
                 component="div"
@@ -365,73 +365,6 @@ const PostsManagementPage = () => {
           </Grid>
         </Card>
 
-        {/* <Box sx={{ display: 'flex', gap: 1, mb: 3 }}> */}
-          {/* <Button
-            variant={filterStatus === 'all' ? 'contained' : 'outlined'}
-            onClick={() => handleFilterStatusChange ('all')}
-            className="topButtonSize"
-          >
-            All Posts {totalCount}
-          </Button>
-          <Button
-            variant={filterStatus === 'active' ? 'contained' : 'outlined'}
-            onClick={() => handleFilterStatusChange('active')}
-            className="topButtonSize"
-          >
-            Approved Posts {posts.filter((p: Post) => p.status === 'active').length}
-          </Button>
-          <Button
-            variant={filterStatus === 'in_review' ? 'contained' : 'outlined'}
-            onClick={() => handleFilterStatusChange('in_review')}
-            className="topButtonSize"
-          >
-            Pending Review {posts.filter((p: Post) => p.status === 'in_review').length}
-          </Button>
-          <Button
-            variant={filterStatus === 'inactive' ? 'contained' : 'outlined'}
-            onClick={() => handleFilterStatusChange('inactive')}
-            className="topButtonSize"
-          >
-            Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
-          </Button> */}
-         
-          {/* <Button
-            variant={filterStatus === 'all' ? 'contained' : 'outlined'}
-            onClick={() => setFilterStatus('all')}
-            startIcon={<ArrowDownwardIcon className="text-white" />}
-            className="bg-Table-Header-Color text-white"
-          >
-            <span className="text-white">All Posts {totalCount}</span>
-          </Button>
-          <Button
-            variant={filterStatus === 'approved' ? 'contained' : 'outlined'}
-            onClick={() => setFilterStatus('approved')}
-            className="bg-Table-Header-Color text-white"
-          >
-            <span className="text-white">Approved Posts {posts.filter((p: any) => p.status === 'approved').length}</span>
-          </Button>
-          <Button
-            variant={filterStatus === 'in-review' ? 'contained' : 'outlined'}
-            onClick={() => setFilterStatus('in-review')}
-            className="bg-Table-Header-Color text-white"
-          >
-            <span className="text-white">In Review Posts {posts.filter((p: any) => p.status === 'in-review').length}</span>
-          </Button>
-          <Button
-            variant={filterStatus === 'rejected' ? 'contained' : 'outlined'}
-            onClick={() => setFilterStatus('rejected')}
-            className="bg-Table-Header-Color text-white"
-          >
-            <span className="text-white">Rejected Posts {posts.filter((p: any) => p.status === 'rejected').length}</span>
-          </Button>
-          <Button
-            variant={filterStatus === 'stopped' ? 'contained' : 'outlined'}
-            onClick={() => setFilterStatus('stopped')}
-            className="bg-Table-Header-Color text-white"
-          >
-            <span className="text-white">Stopped Posts {posts.filter((p: any) => p.status === 'stopped').length}</span>
-          </Button> */}
-        {/* </Box> */}
         <Card variant="outlined" sx={{ minHeight: "100vh", padding: 0, borderRadius: 1 }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
@@ -441,7 +374,7 @@ const PostsManagementPage = () => {
           <Typography color="error" sx={{ textAlign: "center", padding: 4 }}>
             {error}
           </Typography>
-          ) : getFilteredPosts().length === 0 ? (
+          ) : filteredPosts.length === 0 ? (
           <Box sx={{ textAlign: "center", padding: 4 }}>
               <Typography variant="h6">No posts available</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -464,7 +397,7 @@ const PostsManagementPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {posts.map((post: any) => (
+                {filteredPosts.map((post: any) => (
                   <TableRow key={post._id} className="bg-white border-b border-gray-200 hover:bg-gray-50">
                     <TableCell className="underline" sx={{ cursor: "pointer", maxWidth: "200px" }} onClick={() => viewPost(post._id)}>
                       <Typography variant="body2">{post.title}</Typography>
