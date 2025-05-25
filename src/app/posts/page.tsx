@@ -190,6 +190,8 @@ const PostsManagementPage = () => {
         return setFilteredPosts(posts.filter((post: any) => post.status === 'in_review'));
       case 'inactive':
         return setFilteredPosts(posts.filter((post: any) => post.status === 'inactive'));
+      case 'deleted':
+        return setFilteredPosts(posts.filter((post: any) => post.status === 'deleted'));
       default:
         return setFilteredPosts(posts);
     }
@@ -351,6 +353,15 @@ const PostsManagementPage = () => {
                 Rejected Posts {posts.filter((p: Post) => p.status === 'inactive').length}
               </Button>
             </Grid>
+            <Grid item>
+              <Button
+                variant={filterStatus === 'deleted' ? 'contained' : 'outlined'}
+                onClick={() => handleFilterStatusChange('deleted')}
+                className="topButtonSize cursor-pointer"
+              >
+                Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
+              </Button>
+            </Grid>
             {/* <Grid item>
               <TablePagination
                 component="div"
@@ -384,7 +395,7 @@ const PostsManagementPage = () => {
         ) : (
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200">
-              <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:text-gray-400">
                 <TableRow>
                   <TableCell scope="col">Post Title</TableCell>
                   <TableCell scope="col">Post Owner</TableCell>
