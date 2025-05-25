@@ -53,7 +53,7 @@ function BusinessDetailActionButtons({ business }: BusinessDetailActionsProps) {
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1">
 {business.status === 'INACTIVE' ? (
   <span className="text-muted-foreground"></span>
 ) : (

@@ -303,7 +303,7 @@ export function BusinessSpacesTables() {
                 </TableCell>
                 <TableCell>
                 <p className="truncate">
-                  {business.category.length > 50 ? business.category.slice(0, 50) + '...' : business.category}
+                  {business.category}
                 </p>
                 </TableCell>
                 <TableCell>

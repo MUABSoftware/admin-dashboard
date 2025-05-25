@@ -8,42 +8,76 @@ import request from "@src/config/axios"
 import { BusinessSpaceDetail, ApiResponse, } from "@src/types"
 import { Separator } from "@src/components/ui/separator"
 import { BusinessDetailActions } from "@src/components/business-spaces/BusinessDetailActions"
+import { useRouter } from "next/navigation"
+import { Button } from "@src/components/ui/button"
+
 
 export default function BusinessSpaceDetails() {
+    const router = useRouter();
     const { id } = useParams()
     const [space, setSpace] = useState<BusinessSpaceDetail | null>(null)
+    const [businessSpaces, setBusinessSpaces] = useState<BusinessSpaceDetail[]>([]);
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    const currentIndex = businessSpaces.findIndex(item => item._id === id);
 
     useEffect(() => {
         let isSubscribed = true;
 
-        const fetchBusinessSpace = async () => {
+        const fetchData = async () => {
             try {
-                const response = await request.get(`/business/${id}`)
-
+                // Fetch current business space
+                const spaceResponse = await request.get(`/business/${id}`);
+                
                 if (!isSubscribed) return;
 
-                if (response.status !== 200) {
-                    throw new Error('Failed to fetch business space')
+                if (spaceResponse.status !== 200) {
+                    throw new Error('Failed to fetch business space');
                 }
-                const data: ApiResponse = response.data
-                setSpace(data.user)
+
+                const spaceData: ApiResponse = spaceResponse.data;
+                setSpace(spaceData.user);
+
+                // Fetch all business spaces
+                const allSpacesResponse = await request.get('/business');
+                if (!isSubscribed) return;
+
+                const allSpacesData = allSpacesResponse.data;
+                // Match the data structure from the table component
+                setBusinessSpaces(allSpacesData.data || []);
+                
             } catch (err) {
                 if (!isSubscribed) return;
-                setError(err instanceof Error ? err.message : 'An error occurred')
+                setError(err instanceof Error ? err.message : 'An error occurred');
             } finally {
                 if (!isSubscribed) return;
-                setLoading(false)
+                setLoading(false);
             }
-        }
+        };
 
-        fetchBusinessSpace()
+        fetchData();
 
         return () => {
-            isSubscribed = false
+            isSubscribed = false;
+        };
+    }, [id]);
+
+    const handlePrevious = () => {
+        if (currentIndex > 0) {
+            const previousId = businessSpaces[currentIndex - 1]._id;
+            console.log('Previous ID:', previousId);
+            router.push(`/business-spaces/${previousId}`);
         }
-    }, [id])
+    };
+
+    const handleNext = () => {
+        if (currentIndex < businessSpaces.length - 1) {
+            const nextId = businessSpaces[currentIndex + 1]._id;
+            console.log('Next ID:', nextId);
+            router.push(`/business-spaces/${nextId}`);
+        }
+    };
 
     if (loading) {
         return (
@@ -156,10 +190,40 @@ export default function BusinessSpaceDetails() {
         <div className="container space-y-6 p-6 pb-16">
             <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                    <h2 className="text-2xl font-bold tracking-tight">{space.tradeName}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{space.tradeName.length > 50 ? space.tradeName.slice(0, 50) + '...' : space.tradeName}</h2>
                     <p className="text-muted-foreground">Business ID: {space.businessId}</p>
                 </div>
-                <BusinessDetailActions business={space} />
+                <div className="flex items-center gap-4">
+                    <div className="flex gap-2">
+                        <BusinessDetailActions business={space} />
+                        {businessSpaces.length > 0 && currentIndex !== -1 && (
+                            <>
+                                <Button
+                                    onClick={handlePrevious}
+                                    disabled={currentIndex <= 0}
+                                    variant="outline"
+                                    className="flex items-center gap-1 bg-Table-Header-Color font-CustomPrimary-Color text-white disabled:opacity-50"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M15 18l-6-6 6-6"/>
+                                    </svg>
+                                    Previous
+                                </Button>
+                                <Button
+                                    onClick={handleNext}
+                                    disabled={currentIndex >= businessSpaces.length - 1}
+                                    variant="outline"
+                                    className="flex items-center gap-1 bg-Table-Header-Color font-CustomPrimary-Color text-white disabled:opacity-50"
+                                >
+                                    Next
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -171,7 +235,7 @@ export default function BusinessSpaceDetails() {
                         <div className="flex items-center gap-2">
                             <Building className="h-4 w-4 text-muted-foreground" />
                             <span className="font-semibold">Legal Name: </span>
-                            <span>{space.legalName}</span>
+                            <span>{space.legalName.length > 50 ? space.legalName.slice(0, 50) + '...' : space.legalName}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -239,7 +303,7 @@ export default function BusinessSpaceDetails() {
                         <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">Full Name:</span>
-                            <span>{space.tradeName || notAvailable}</span>
+                            <span>{space.tradeName.length > 50 ? space.tradeName.slice(0, 50) + '...' : space.tradeName || notAvailable}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-muted-foreground" />
