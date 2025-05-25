@@ -203,13 +203,13 @@ function ProductDetailActionButtons({ product }: ProductDetailActionsProps) {
             <Button
               onClick={() => setIsRejectDialogOpen(false)}
               variant="outline"
-            >
+              className="bg-Table-Header-Color font-CustomPrimary-Color text-white border-none">
               Cancel
             </Button>
             <Button
               onClick={handleRejectSubmit}
               variant="destructive"
-            >
+              className="bg-red-500 text-white border-none">
               Reject
             </Button>
           </DialogFooter>

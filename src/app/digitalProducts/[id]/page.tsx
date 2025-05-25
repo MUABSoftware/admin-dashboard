@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from "react"
-import {  useParams } from "next/navigation"
+import {  useParams, useRouter } from "next/navigation"
 // import Link from "next/link"
 import { 
   ExternalLink, 
@@ -99,54 +99,79 @@ interface Product {
 
 export default function DigitalProductView() {
   const { id } = useParams()
-  // const isMobile = useIsMobile()
-  // const [isOpen, setIsOpen] = useState(true)
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null)
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true)
   const [dialogRef, setDialogRef] = useState<HTMLDialogElement | null>(null)
 
+  const currentIndex = products.findIndex(item => item._id === id);
+
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       try {
-        const response = await request.get(`/product/${id}`)
-    
+        // Fetch current product
+        const productResponse = await request.get(`/product/${id}`);
         const productData = {
-          ...response.data,
-          benefits: response.data?.benefits || [],
-          tags: response.data?.tags || [],
-          sections: (response.data?.sections as Product['sections'])?.map(section => ({
+          ...productResponse.data,
+          benefits: productResponse.data?.benefits || [],
+          tags: productResponse.data?.tags || [],
+          sections: (productResponse.data?.sections as Product['sections'])?.map(section => ({
             ...section,
             items: section?.items || []
           })) || [],
           introMedia: {
-            video: response.data?.introMedia?.video || null,
-            coverImage: response.data?.introMedia?.coverImage || { url: '', name: '' }
+            video: productResponse.data?.introMedia?.video || null,
+            coverImage: productResponse.data?.introMedia?.coverImage || { url: '', name: '' }
           },
           mediaInfo: {
-            audios: response.data?.mediaInfo?.audios || { count: 0, duration: 0 },
-            videos: response.data?.mediaInfo?.videos || { count: 0, duration: 0 },
-            documentsCount: response.data?.mediaInfo?.documentsCount || 0,
-            imagesCount: response.data?.mediaInfo?.imagesCount || 0
+            audios: productResponse.data?.mediaInfo?.audios || { count: 0, duration: 0 },
+            videos: productResponse.data?.mediaInfo?.videos || { count: 0, duration: 0 },
+            documentsCount: productResponse.data?.mediaInfo?.documentsCount || 0,
+            imagesCount: productResponse.data?.mediaInfo?.imagesCount || 0
           }
-        } as Product
-        setProduct(productData)
-        setLoading(false)
+        } as Product;
+        setProduct(productData);
+
+        // Fetch all products
+        const allProductsResponse = await request.get('/product');
+        if (allProductsResponse.data) {
+          setProducts(allProductsResponse.data);
+        }
+
       } catch (error) {
-        toast.error("Failed to fetch product details")
-        setLoading(false)
+        toast.error("Failed to fetch product details");
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
     if (id) {
-      fetchProduct()
+      fetchData();
     }
 
     return () => {
       if (dialogRef) {
-        dialogRef.remove()
+        dialogRef.remove();
       }
+    };
+  }, [id]);
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const previousId = products[currentIndex - 1]._id;
+      console.log('Previous ID:', previousId);
+      router.push(`/digitalProducts/${previousId}`);
     }
-  }, [id])
+  };
+
+  const handleNext = () => {
+    if (currentIndex < products.length - 1) {
+      const nextId = products[currentIndex + 1]._id;
+      console.log('Next ID:', nextId);
+      router.push(`/digitalProducts/${nextId}`);
+    }
+  };
 
   if (loading) {
     return <div className="container p-6">Loading...</div>
@@ -229,6 +254,32 @@ export default function DigitalProductView() {
             </a>
           </Button> */}
           <ProductDetailActions product={product} />
+          {products.length > 0 && currentIndex !== -1 && (
+            <>
+              <Button
+                onClick={handlePrevious}
+                disabled={currentIndex <= 0}
+                variant="outline"
+                className="flex items-center gap-1 bg-Table-Header-Color font-CustomPrimary-Color text-white disabled:opacity-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Previous
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={currentIndex >= products.length - 1}
+                variant="outline"
+                className="flex items-center gap-1 bg-Table-Header-Color font-CustomPrimary-Color text-white disabled:opacity-50"
+              >
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
