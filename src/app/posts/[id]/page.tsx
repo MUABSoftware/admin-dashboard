@@ -13,6 +13,7 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const AdminPostDetails = () => {
   const [post, setPost] = useState<any>(null);
+  const [posts, setPosts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,8 @@ const AdminPostDetails = () => {
   const theme = useTheme();
   const { id } = useParams();
 
+  const currentIndex = posts.findIndex(item => item._id === id);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -33,16 +36,26 @@ const AdminPostDetails = () => {
   useEffect(() => {
     if (!isMounted) return;
     
-    request
-      .get(`/posts/${id}`)
-      .then((res) => {
-        setPost(res.data.data);
+    const fetchData = async () => {
+      try {
+        // Fetch current post
+        const postResponse = await request.get(`/posts/${id}`);
+        setPost(postResponse.data.data);
+
+        // Fetch all posts
+        const allPostsResponse = await request.get('/posts');
+        if (allPostsResponse.data?.data) {
+          setPosts(allPostsResponse.data.data);
+        }
+        
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err: any) {
         setError("Failed to load post details. Please try again." + err.message);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, [id, isMounted]);
 
   const loadMoreMedia = () => {
@@ -100,6 +113,22 @@ const AdminPostDetails = () => {
 
   const openDeleteDialog = () => {
     setOpenDialog(true);
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const previousId = posts[currentIndex - 1]._id;
+      console.log('Previous ID:', previousId);
+      router.push(`/posts/${previousId}`);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < posts.length - 1) {
+      const nextId = posts[currentIndex + 1]._id;
+      console.log('Next ID:', nextId);
+      router.push(`/posts/${nextId}`);
+    }
   };
 
   if (loading) {
@@ -274,6 +303,32 @@ const AdminPostDetails = () => {
           >
             <span className="text-white">Delete</span>
           </Button>
+          {posts.length > 0 && currentIndex !== -1 && (
+            <>
+              <Button
+                onClick={handlePrevious}
+                disabled={currentIndex <= 0}
+                variant="outlined"
+                className="flex items-center gap-1 bg-Table-Header-Color font-CustomPrimary-Color text-white disabled:opacity-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Previous
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={currentIndex >= posts.length - 1}
+                variant="outlined"
+                className="flex items-center gap-1 bg-Table-Header-Color font-CustomPrimary-Color text-white disabled:opacity-50"
+              >
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </Button>
+            </>
+          )}
         </Stack>
         <Divider sx={{ my: 2 }} />
         <Stack direction="row" spacing={2}>
