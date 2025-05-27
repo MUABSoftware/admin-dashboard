@@ -68,6 +68,8 @@ const PostsManagementPage = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
+  const [deletedPosts, setDeletedPosts] = useState([]);
+
   type Post = {
     _id: string;
     title: string;
@@ -78,6 +80,7 @@ const PostsManagementPage = () => {
     createdAt: string;
     reportCount?: number;
     status: string;
+    isDeleted?: boolean;
   };
 
 
@@ -95,7 +98,8 @@ const PostsManagementPage = () => {
         order,
         page,
         limit,
-        status: ""
+        status: "",
+        isDeleted: filterStatus === 'deleted' ? true : false,
       };
       
       const { data } = await request.get("/posts", {
@@ -181,6 +185,10 @@ const PostsManagementPage = () => {
   const handleFilterStatusChange = (newStatus: string) => {
     setPage(0);
     setFilterStatus(newStatus);
+    if (newStatus === 'deleted') {
+      fetchPosts();
+      return;
+    }
     switch (newStatus) {
       case 'all':
         return setFilteredPosts(posts);
@@ -191,7 +199,7 @@ const PostsManagementPage = () => {
       case 'inactive':
         return setFilteredPosts(posts.filter((post: any) => post.status === 'inactive'));
       case 'deleted':
-        return setFilteredPosts(posts.filter((post: any) => post.status === 'deleted'));
+        return setFilteredPosts(posts.filter((post: any) => post.isDeleted === true));
       default:
         return setFilteredPosts(posts);
     }
@@ -246,6 +254,19 @@ const PostsManagementPage = () => {
   // const handleNotifyCreator = (post: any) => {
   //   toast.success(`Message sent to creator of post: ${post.title}`);
   // };
+
+  useEffect(() => {
+    // Fetch all deleted posts for the count
+    const fetchDeletedPosts = async () => {
+      try {
+        const { data } = await request.get("/posts", { params: { isDeleted: true } });
+        setDeletedPosts(data.data);
+      } catch (err) {
+        // handle error if needed
+      }
+    };
+    fetchDeletedPosts();
+  }, []);
 
   return (
     <div className="mx-auto p-6">
@@ -359,7 +380,7 @@ const PostsManagementPage = () => {
                 onClick={() => handleFilterStatusChange('deleted')}
                 className="topButtonSize cursor-pointer"
               >
-                Deleted Posts {posts.filter((p: Post) => p.status === 'deleted').length}
+                Deleted Posts {deletedPosts.length}
               </Button>
             </Grid>
             {/* <Grid item>
