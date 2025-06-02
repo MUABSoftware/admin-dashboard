@@ -93,6 +93,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
             </Breadcrumbs>
             <Box>
               <Button
+                className="bg-Table-Header-Color font-CustomPrimary-Color"
                 variant="outlined"
                 startIcon={<ArrowBack />}
                 onClick={handlePrevious}
@@ -101,6 +102,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
                 Previous
               </Button>
               <Button
+                className="bg-Table-Header-Color font-CustomPrimary-Color"
                 variant="outlined"
                 endIcon={<ArrowForward />}
                 onClick={handleNext}
@@ -109,6 +111,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
                 Next
               </Button>
               <Button
+                className="bg-Table-Header-Color font-CustomPrimary-Color"
                 variant="contained"
                 color="error"
                 startIcon={<Trash2 className="h-4 w-4" />}
