@@ -573,7 +573,8 @@ export default function CommentsPage() {
                         <Typography variant="body2">{truncateText(comment.content)}</Typography>
                       </TableCell>
                       <TableCell>{comment.author}</TableCell>
-                      <TableCell className="underline" sx={{ cursor: "pointer" }} onClick={() => router.push(`/posts/${comment.postId}`)}>
+                      <TableCell className="underline" sx={{ cursor: "pointer" }} 
+                      onClick={() => router.push(``)}>
                         {comment.postTitle}
                       </TableCell>
                       <TableCell>{new Date(comment.date).toLocaleDateString('en-GB')}</TableCell>
