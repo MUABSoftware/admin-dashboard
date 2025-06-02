@@ -199,13 +199,16 @@ const dispatch = useDispatch();
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
+            <Button variant="outline" 
+              className="bg-Table-Header-Color font-CustomPrimary-Color text-white border-none" 
+              onClick={() => setIsRejectDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
               variant="destructive" 
+              className="bg-red-500 text-white border-none"
               onClick={handleRejectSubmit} 
-              style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb' }}
+              // style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb' }}
             >
               Reject
             </Button>

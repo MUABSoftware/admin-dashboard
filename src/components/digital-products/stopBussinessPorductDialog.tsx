@@ -86,8 +86,8 @@ import {
             This action will immediately stop all operations for this product.
             This includes:
           </CardDescription>
-          <CardContent className="space-y-2">
-            <ul className="list-disc pl-6 space-y-2">
+          <CardContent className="space-y-0" style={{ padding: "0px", paddingLeft: "10px" }}>
+            <ul className="list-disc pl-4 space-y-0">
               <li>Removing the product from the marketplace</li>
               <li>Suspending all ongoing transactions</li>
               <li>Preventing new purchases</li>
@@ -105,19 +105,16 @@ import {
             placeholder="Please provide a reason for stopping this product..."
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => onOpenChange(false)} variant="default" color="error" className="bg-red-500 text-white">
+        <DialogActions  style={{ padding: "0px 1.5rem 1.5rem 1rem" }}>
+          <Button onClick={() => onOpenChange(false)} 
+            variant="default"
+            className="bg-Table-Header-Color font-CustomPrimary-Color text-white border-none">
             Cancel
           </Button>
-          {/* <Button onClick={handleBulkApprove} variant="default" className="bg-blue-500 text-white">
-              Cancel   
-            </Button> */}
           <Button
             onClick={handleStop}
-            color="error"
             variant="default"
-            className="bg-blue-500 text-white"
-          >
+            className="bg-red-500 text-white border-none">
             Confirm Stop
           </Button>
         </DialogActions>

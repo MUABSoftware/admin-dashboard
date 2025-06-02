@@ -3,7 +3,7 @@ import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box, Divider,
 import { Business, Home, MonetizationOn, People, PostAdd, Report, Settings, Inventory as Product, AccountBalance, KeyboardArrowDown, KeyboardArrowUp, Category, Tag } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Building2, User, ShoppingBasket, FileCog, FileText } from "lucide-react";
+import { Building2, User, ShoppingBasket, FileCog, FileText, MessageSquare } from "lucide-react";
 
 type NavigationItem = {
   text: string;
@@ -31,6 +31,7 @@ const CustomDrawer: React.FC<DrawerProps> = ({ mobileOpen, handleDrawerToggle, s
     { text: "Digital Products", icon: <ShoppingBasket />, route: "/digitalProducts/" }, 
     { text: "Users Management", icon: <User />, route: "/users" },
     { text: "Posts Management", icon: <FileCog />, route: "/posts" },
+    { text: "Comments", icon: <MessageSquare />, route: "/comments" },
     { text: "Reports", icon: <FileText />, route: "/reports" },
     
 
