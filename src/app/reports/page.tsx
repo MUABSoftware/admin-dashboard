@@ -96,9 +96,15 @@ export default function AdminReports() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("pending");
+  const [selectedStatus, setSelectedStatus] = useState<string>("pending");
   const [error, setError] = useState<string | null>(null);
+  const [totalCounts, setTotalCounts] = useState({
+    all: 0,
+    pending: 0,
+    in_progress: 0,
+    resolved: 0
+  });
   // const PAGE_SIZE = 10;
 
   const router = useRouter();
@@ -110,7 +116,10 @@ export default function AdminReports() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const response = await request.get(`/reports/?page=${page}&status=${selectedStatus}`, {
+      // Use the correct status parameter based on the selected tab
+      const statusParam = selectedStatus === 'all' ? '' : selectedStatus;
+      
+      const response = await request.get(`/reports/?page=${page}&status=${statusParam}`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -121,10 +130,23 @@ export default function AdminReports() {
         const reportsData = response.data.reports || [];
         setReports(reportsData);
         setTotalPages(response.data.totalPages || 1);
+        // Update total counts from API response
+        setTotalCounts({
+          all: response.data.totalCounts?.all || 0,
+          pending: response.data.totalCounts?.pending || 0,
+          in_progress: response.data.totalCounts?.in_progress || 0,
+          resolved: response.data.totalCounts?.resolved || 0
+        });
       }
     } catch (error: any) {
       setReports([]);
       setTotalPages(1);
+      setTotalCounts({
+        all: 0,
+        pending: 0,
+        in_progress: 0,
+        resolved: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -207,11 +229,11 @@ export default function AdminReports() {
   };
 
   const handleTabChange = (value: string) => {
-    // if (value === activeTab) return;
-    console.log(value);
+    console.log('Tab changed to:', value);
     setActiveTab(value);
     setPage(1);
     setSelectedStatus(value);
+    fetchReports();
   };
 
   const handleStatusChange = async (userId: string, currentStatus: string) => {
@@ -250,7 +272,7 @@ export default function AdminReports() {
         Manage and monitor all reports in the platform
       </p>
     </div>
-    <Box>
+    {/* <Box></Box> */}
   
     {/* Total Reports: {reports.length} */}
 
@@ -265,30 +287,34 @@ export default function AdminReports() {
             <Button
               variant={activeTab === 'all' ? 'default' : 'outline'}
               onClick={() => handleTabChange('all')}
-              className={`topButtonSize ${activeTab === 'all' }`}
+              className={`topButtonSize ${activeTab === 'all' ? 'bg-primary text-white' : ''}`}
             >
-              All Reports {reports.length}
+              All Reports 
+              {/* {totalCounts.all} */}
             </Button>
             <Button
               variant={activeTab === 'pending' ? 'default' : 'outline'}
               onClick={() => handleTabChange('pending')}
-              className={`topButtonSize ${activeTab === 'pending'}`}
+              className={`topButtonSize ${activeTab === 'pending' ? 'bg-primary text-white' : ''}`}
             >
-              Pending Reports {reports.filter(r => r.reports[0].status === 'pending').length}
+              Pending Reports 
+              {/* {totalCounts.pending} */}
             </Button>
             <Button
               variant={activeTab === 'in_progress' ? 'default' : 'outline'}
               onClick={() => handleTabChange('in_progress')}
-              className={`topButtonSize ${activeTab === 'in_progress'}`}
+              className={`topButtonSize ${activeTab === 'in_progress' ? 'bg-primary text-white' : ''}`}
             >
-              In Progress Reports {reports.filter(r => r.reports[0].status === 'in_progress').length}
+              In Progress Reports 
+              {/* {totalCounts.in_progress} */}
             </Button>
             <Button
               variant={activeTab === 'resolved' ? 'default' : 'outline'}
               onClick={() => handleTabChange('resolved')}
-              className={`topButtonSize ${activeTab === 'resolved'}`}
+              className={`topButtonSize ${activeTab === 'resolved' ? 'bg-primary text-white' : ''}`}
             >
-              Resolved Reports {reports.filter(r => r.reports[0].status === 'resolved').length}
+              Resolved Reports 
+              {/* {totalCounts.resolved} */}
             </Button>
           </Box>
 
@@ -313,141 +339,143 @@ export default function AdminReports() {
                 </div>
               ) : (
                 <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                  <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200">
-                    <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                      <TableRow>
-                        <TableCell scope="col">Date</TableCell>
-                        <TableCell scope="col">Type</TableCell>
-                        <TableCell scope="col">Title/Username</TableCell>
-                        <TableCell scope="col">Total Reports</TableCell>
-                        <TableCell scope="col">Reported By</TableCell>
-                        <TableCell scope="col">Status</TableCell>
-                        <TableCell scope="col" className="text-right">Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {reports.map((report: Report) => (
-                        <TableRow key={report.resourceId} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
-                          <TableCell>
-                            {report.latestReportDate ? 
-                              format(new Date(report.latestReportDate), 'dd-MM-yyyy') :
-                              'N/A'
-                            }
-                          </TableCell>
-                          <TableCell>
-                            <div 
-                              className="flex items-center cursor-pointer hover:text-primary"
-                              onClick={() => handleViewReportDetails(report.resourceId)}
-                            >
-                              {getTypeIcon(report.type)}
-                              {getTypeLabel(report.type)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span 
-                              className="cursor-pointer hover:text-primary hover:underline"
-                              onClick={() => handleViewReportDetails(report.resourceId)}
-                            >
-                              {report.resource?.title || report.resource?.name || 'N/A'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge>{report.totalReports || 0}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {(report.reports || []).slice(0, 2).map((entry: ReportEntry, index: number) => (
-                                <span 
-                                  key={index}
-                                  className="cursor-pointer hover:text-primary hover:underline"
-                                  onClick={() => handleViewUserProfile(entry.reportedById)}
-                                >
-                                  {entry.reporterName || 'Anonymous'}
-                                </span>
-                              ))}
-                              {(report.reports || []).length > 2 && (
-                                <span className="text-muted-foreground">
-                                  +{report.reports.length - 2} more
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                report.reports?.[0]?.status || 'pending'
-                              )}`}
-                            >
-                              {(report.reports?.[0]?.status || 'pending').replace("_", " ")}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu modal={false}>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent 
-                                align="end" 
-                                className="bg-white"
-                                sideOffset={5}
-                              >
-                                {report.type === "post" && (
-                                  <DropdownMenuItem 
-                                    className="cursor-pointer hover:bg-gray-100"
-                                    onClick={() => handleDeletePost(report.resourceId)}
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
-                                )}
-                                {report.type === "profile" && (
-                                  <>
-                                    <DropdownMenuItem 
-                                      className="cursor-pointer hover:bg-gray-100"
-                                      onClick={() => handleRestrictUser(report.resourceId)}
-                                    >
-                                      Restrict
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      className="cursor-pointer hover:bg-gray-100"
-                                      onClick={() => handleBlockUser(report.resourceId)}
-                                    >
-                                      Block
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                {report.type === "digital_product" && (
-                                  <DropdownMenuItem 
-                                    className="cursor-pointer hover:bg-gray-100"
-                                    onClick={() => handleStopProduct(report.resourceId)}
-                                  >
-                                    Stop
-                                  </DropdownMenuItem>
-                                )}
-                                {report.type === "comment" && (
-                                  <DropdownMenuItem 
-                                    className="cursor-pointer hover:bg-gray-100"
-                                    onClick={() => handleDeleteComment(report.resourceId)}
-                                  >
-                                    Delete Comment
-                                  </DropdownMenuItem>
-                                )}
-                                {report.type === "user" && (
-                                  <DropdownMenuItem 
-                                    className="cursor-pointer hover:bg-gray-100"
-                                    onClick={() => handleStatusChange(report.resourceId, report.status || "active")}
-                                  >
-                                    {report.status === "blocked" ? "Unblock User" : "Block User"}
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                  <div className="block w-full overflow-x-auto">
+                    <Table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 border-1 border-gray-200" style={{ tableLayout: 'fixed', width: '100%' }}>
+                      <TableHead className="text-xs text-gray-700 uppercase bg-gray-50 dark:text-gray-400" style={{ display: 'table-header-group', width: '100%' }}>
+                        <TableRow style={{ display: 'table-row', width: '100%' }}>
+                          <TableCell style={{ width: '10%' }}>Date</TableCell>
+                          <TableCell style={{ width: '10%' }}>Type</TableCell>
+                          <TableCell style={{ width: '20%' }}>Title/Username</TableCell>
+                          <TableCell style={{ width: '10%' }}>Total Reports</TableCell>
+                          <TableCell style={{ width: '20%' }}>Reported By</TableCell>
+                          <TableCell style={{ width: '15%' }}>Status</TableCell>
+                          <TableCell style={{ width: '15%' }}>Actions</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHead>
+                      <TableBody style={{ display: 'table-row-group', width: '100%' }}>
+                        {reports.map((report: Report) => (
+                          <TableRow key={report.resourceId} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600" style={{ display: 'table-row', width: '100%' }}>
+                            <TableCell style={{ width: '10%' }}>
+                              {report.latestReportDate ? 
+                                format(new Date(report.latestReportDate), 'dd-MM-yyyy') :
+                                'N/A'
+                              }
+                            </TableCell>
+                            <TableCell style={{ width: '10%' }}>
+                              <div 
+                                className="flex items-center cursor-pointer hover:text-primary"
+                                onClick={() => handleViewReportDetails(report.resourceId)}
+                              >
+                                {getTypeIcon(report.type)}
+                                {getTypeLabel(report.type)}
+                              </div>
+                            </TableCell>
+                            <TableCell style={{ width: '20%' }}>
+                              <span 
+                                className="cursor-pointer hover:text-primary hover:underline"
+                                onClick={() => handleViewReportDetails(report.resourceId)}
+                              >
+                                {report.resource?.title || report.resource?.name || 'N/A'}
+                              </span>
+                            </TableCell>
+                            <TableCell style={{ width: '10%' }}>
+                              <Badge>{report.totalReports || 0}</Badge>
+                            </TableCell>
+                            <TableCell style={{ width: '20%' }}>
+                              <div className="flex flex-wrap gap-1">
+                                {(report.reports || []).slice(0, 2).map((entry: ReportEntry, index: number) => (
+                                  <span 
+                                    key={index}
+                                    className="cursor-pointer hover:text-primary hover:underline"
+                                    onClick={() => handleViewUserProfile(entry.reportedById)}
+                                  >
+                                    {entry.reporterName || 'Anonymous'}
+                                  </span>
+                                ))}
+                                {(report.reports || []).length > 2 && (
+                                  <span className="text-muted-foreground">
+                                    +{report.reports.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell style={{ width: '15%' }}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                  report.reports?.[0]?.status || 'pending'
+                                )}`}
+                              >
+                                {(report.reports?.[0]?.status || 'pending').replace("_", " ")}
+                              </span>
+                            </TableCell>
+                            <TableCell style={{ width: '15%' }}>
+                              <DropdownMenu modal={false}>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent 
+                                  align="end" 
+                                  className="bg-white"
+                                  sideOffset={5}
+                                >
+                                  {report.type === "post" && (
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer hover:bg-gray-100"
+                                      onClick={() => handleDeletePost(report.resourceId)}
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  )}
+                                  {report.type === "profile" && (
+                                    <>
+                                      <DropdownMenuItem 
+                                        className="cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleRestrictUser(report.resourceId)}
+                                      >
+                                        Restrict
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        className="cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleBlockUser(report.resourceId)}
+                                      >
+                                        Block
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {report.type === "digital_product" && (
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer hover:bg-gray-100"
+                                      onClick={() => handleStopProduct(report.resourceId)}
+                                    >
+                                      Stop
+                                    </DropdownMenuItem>
+                                  )}
+                                  {report.type === "comment" && (
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer hover:bg-gray-100"
+                                      onClick={() => handleDeleteComment(report.resourceId)}
+                                    >
+                                      Delete Comment
+                                    </DropdownMenuItem>
+                                  )}
+                                  {report.type === "user" && (
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer hover:bg-gray-100"
+                                      onClick={() => handleStatusChange(report.resourceId, report.status || "active")}
+                                    >
+                                      {report.status === "blocked" ? "Unblock User" : "Block User"}
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
             </TabsContent>
@@ -465,7 +493,8 @@ export default function AdminReports() {
           </div>
         )}
      
-    </Box>
+  
     </div>
   );
 }
+
