@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -17,11 +17,23 @@ import {
 } from "@mui/material";
 import { ArrowBack, ArrowForward } from "@mui/icons-material";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
+// Define types
+interface Comment {
+  id: number;
+  content: string;
+  author: string;
+  date: string;
+  post: {
+    id: number;
+    title: string;
+  };
+}
+
 // Mock data - replace with actual API call
-const mockComment = {
+const mockComment: Comment = {
   id: 1,
   content: "This is a great post! I really enjoyed reading it and learning from the insights shared. The author has done an excellent job explaining complex concepts in a simple way.",
   author: "John Doe",
@@ -32,15 +44,30 @@ const mockComment = {
   },
 };
 
-export default function CommentDetails({ params }: { params: { id: string } }) {
+interface PageParams {
+  id: string;
+  [key: string]: string;
+}
+
+export default function CommentDetails() {
   const router = useRouter();
+  const params = useParams<PageParams>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [comment, setComment] = useState<Comment>(mockComment);
+
+  const id = params?.id || '';
+
+  useEffect(() => {
+    // Here you can fetch the comment data based on the ID
+    // For now, we're using mock data
+    console.log("Comment ID:", id);
+  }, [id]);
 
   const handleDelete = () => {
     // Implement delete logic here
-    console.log("Deleting comment:", params.id);
+    console.log("Deleting comment:", id);
     setDeleteDialogOpen(false);
     setSnackbarMessage("Comment successfully deleted!");
     setOpenSnackbar(true);
@@ -51,7 +78,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
 
   const handlePrevious = () => {
     // Implement navigation to previous comment
-    const prevId = parseInt(params.id) - 1;
+    const prevId = parseInt(id) - 1;
     if (prevId > 0) {
       router.push(`/comments/${prevId}`);
     }
@@ -59,7 +86,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
 
   const handleNext = () => {
     // Implement navigation to next comment
-    const nextId = parseInt(params.id) + 1;
+    const nextId = parseInt(id) + 1;
     router.push(`/comments/${nextId}`);
   };
 
@@ -93,29 +120,29 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
             </Breadcrumbs>
             <Box>
               <Button
-                className="bg-Table-Header-Color font-CustomPrimary-Color"
                 variant="outlined"
                 startIcon={<ArrowBack />}
                 onClick={handlePrevious}
                 sx={{ mr: 1 }}
+                className="bg-Table-Header-Color font-CustomPrimary-Color"
               >
                 Previous
               </Button>
               <Button
-                className="bg-Table-Header-Color font-CustomPrimary-Color"
                 variant="outlined"
                 endIcon={<ArrowForward />}
                 onClick={handleNext}
                 sx={{ mr: 1 }}
+                className="bg-Table-Header-Color font-CustomPrimary-Color"
               >
                 Next
               </Button>
               <Button
-                className="bg-Table-Header-Color font-CustomPrimary-Color"
                 variant="contained"
                 color="error"
                 startIcon={<Trash2 className="h-4 w-4" />}
                 onClick={() => setDeleteDialogOpen(true)}
+                className="bg-Table-Header-Color font-CustomPrimary-Color"
               >
                 Delete
               </Button>
@@ -132,7 +159,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
                   Comment Content
                 </Typography>
                 <Typography variant="body1" className="text-gray-900">
-                  {mockComment.content}
+                  {comment.content}
                 </Typography>
               </div>
 
@@ -142,7 +169,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
                     Author
                   </Typography>
                   <Typography variant="body1" className="text-gray-900">
-                    {mockComment.author}
+                    {comment.author}
                   </Typography>
                 </div>
 
@@ -151,7 +178,7 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
                     Date Posted
                   </Typography>
                   <Typography variant="body1" className="text-gray-900">
-                    {new Date(mockComment.date).toLocaleDateString('en-GB')}
+                    {new Date(comment.date).toLocaleDateString('en-GB')}
                   </Typography>
                 </div>
               </div>
@@ -160,9 +187,9 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
                 <Typography variant="subtitle2" color="text.secondary">
                   Related Post
                 </Typography>
-                <Link href={`/posts/${mockComment.post.id}`} passHref>
+                <Link href={`/posts/${comment.post.id}`} passHref>
                   <MuiLink className="text-blue-600 hover:text-blue-800">
-                    {mockComment.post.title}
+                    {comment.post.title}
                   </MuiLink>
                 </Link>
               </div>
@@ -177,8 +204,10 @@ export default function CommentDetails({ params }: { params: { id: string } }) {
             Are you sure you want to delete this comment? This action cannot be undone.
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleDelete} color="error" variant="contained">
+            <Button className="bg-Table-Header-Color font-CustomPrimary-Color" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-Table-Header-Color font-CustomPrimary-Color" onClick={handleDelete} color="error" variant="contained">
               Delete
             </Button>
           </DialogActions>
