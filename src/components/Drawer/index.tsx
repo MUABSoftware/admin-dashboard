@@ -10,6 +10,7 @@ type NavigationItem = {
   icon: React.JSX.Element;
   route?: string;
   subItems?: NavigationItem[];
+  newTab?: boolean;
 };
 
 interface DrawerProps {
@@ -33,9 +34,9 @@ const CustomDrawer: React.FC<DrawerProps> = ({ mobileOpen, handleDrawerToggle, s
     { text: "Posts Management", icon: <FileCog />, route: "/posts" },
     { text: "Comments", icon: <MessageSquare />, route: "/comments" },
     { text: "Reports", icon: <FileText />, route: "/reports" },
+    { text: "Finance", icon: <AccountBalance />, route: "/finance", newTab: true },
+
     
-
-
     // { text: "Market Place", icon: <Store />, route: "/marketplace/" },
     // { text: "Revenue Share Reports", icon: <MonetizationOn />, route: "/revenue-share" },
     // {
@@ -46,14 +47,14 @@ const CustomDrawer: React.FC<DrawerProps> = ({ mobileOpen, handleDrawerToggle, s
     //     { text: "Hashtag", icon: <Tag />, route: "/categories/hashtag" },
     //   ],
     // },
-    {
-      text: "Bank Account",
-      icon: <AccountBalance />,
-      subItems: [
-        { text: "PayPal Payouts", icon: <MonetizationOn />, route: "/bankaccount/paypal" },
-        { text: "Payoneer Payouts", icon: <MonetizationOn />, route: "/bankaccount/payoneer" },
-      ],
-    },
+    // {
+    //   text: "Bank Account",
+    //   icon: <AccountBalance />,
+    //   subItems: [
+    //     { text: "PayPal Payouts", icon: <MonetizationOn />, route: "/bankaccount/paypal" },
+    //     { text: "Payoneer Payouts", icon: <MonetizationOn />, route: "/bankaccount/payoneer" },
+    //   ],
+    // },
 
     // { text: "Categories", icon: <Category />, route: "/categories/" },
     // { text: "Settings", icon: <Settings />, route: "/settings" },
@@ -61,8 +62,12 @@ const CustomDrawer: React.FC<DrawerProps> = ({ mobileOpen, handleDrawerToggle, s
 
   const handleNavigation = (route: NavigationItem) => {
     if (route.route) {
-      setPageTitle(route.text + " - " + "Muab Admin");
-      router.push(route.route);
+      if (route.newTab) {
+        window.open(route.route, '_blank', 'noopener,noreferrer');
+      } else {
+        setPageTitle(route.text + " - " + "Muab Admin");
+        router.push(route.route);
+      }
 
       if (!route.route.includes('/bankaccount') && !route.route.includes('/categories')) {
         setOpenSubMenu(null);
