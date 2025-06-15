@@ -24,10 +24,10 @@ import { PayoutActions } from "@src/components/business-spaces/PayoutActions";
 const mockPayouts: Payout_paypal[] = [
   {
     id: "PAY001",
+    amount: 1500.00,
     businessSpaceId: "BS001",
     company:"Muab",
     userId: "USR001",
-    amount: 1500.00,
     currency: "USD",
     method: "Payoneer",
     status: "To Do",
@@ -45,121 +45,11 @@ const mockPayouts: Payout_paypal[] = [
     isFlagged: false,
   },
   {
-    id: "PAY002",
-    businessSpaceId: "BS003",
-    company:"Muab",
-    userId: "USR003",
-    amount: 2500.00,
-    currency: "USD",
-    method: "Payoneer",
-    status: "Done",
-    processingFee: 75.00,
-    netAmount: 2425.00,
-    requestDate: new Date(),
-    monthlyPeriod: "January 2024",
-    bankDetails: "payoneer@example.com",
-    isAutomated: true,
-    earningsId: "EARN002",
-    taxDeduction: 250.00,
-    complianceStatus: "Verified",
-    country: "Canada",
-    emailSent: true,
-    isFlagged: false,
-  },
-  {
-    id: "PAY003",
-    businessSpaceId: "BS004",
-    company:"Muab",
-    userId: "USR004",
+    id: "PAY001",
     amount: 1500.00,
-    currency: "USD",
-    method: "Payoneer",
-    status: "In Progress",
-    processingFee: 45.00,
-    netAmount: 1455.00,
-    requestDate: new Date(),
-    monthlyPeriod: "January 2024",
-    bankDetails: "paypal@example.com",
-    isAutomated: true,
-    earningsId: "EARN001",
-    taxDeduction: 150.00,
-    complianceStatus: "Verified",
-    country: "United States",
-    emailSent: true,
-    isFlagged: false,
-  },
-  {
-    id: "PAY004",
-    businessSpaceId: "BS005",
-    company:"Muab",
-    userId: "USR005",
-    amount: 2500.00,
-    currency: "USD",
-    method: "Payoneer",
-    status: "Done",
-    processingFee: 75.00,
-    netAmount: 2425.00,
-    requestDate: new Date(),
-    monthlyPeriod: "January 2024",
-    bankDetails: "payoneer@example.com",
-    isAutomated: true,
-    earningsId: "EARN002",
-    taxDeduction: 250.00,
-    complianceStatus: "Verified",
-    country: "Canada",
-    emailSent: true,
-    isFlagged: false,
-  },
-  {
-    id: "PAY005",
     businessSpaceId: "BS001",
     company:"Muab",
     userId: "USR001",
-    amount: 1500.00,
-    currency: "USD",
-    method: "Payoneer",
-    status: "Pending",
-    processingFee: 45.00,
-    netAmount: 1455.00,
-    requestDate: new Date(),
-    monthlyPeriod: "January 2024",
-    bankDetails: "paypal@example.com",
-    isAutomated: true,
-    earningsId: "EARN001",
-    taxDeduction: 150.00,
-    complianceStatus: "Verified",
-    country: "United States",
-    emailSent: true,
-    isFlagged: true,
-  },
-  {
-    id: "PAY006",
-    businessSpaceId: "BS003",
-    company:"Muab",
-    userId: "USR003",
-    amount: 2500.00,
-    currency: "USD",
-    method: "Payoneer",
-    status: "Done",
-    processingFee: 75.00,
-    netAmount: 2425.00,
-    requestDate: new Date(),
-    monthlyPeriod: "January 2024",
-    bankDetails: "payoneer@example.com",
-    isAutomated: true,
-    earningsId: "EARN002",
-    taxDeduction: 250.00,
-    complianceStatus: "Verified",
-    country: "Canada",
-    emailSent: true,
-    isFlagged: false,
-  },
-  {
-    id: "PAY007",
-    businessSpaceId: "BS004",
-    company:"Muab",
-    userId: "USR004",
-    amount: 1500.00,
     currency: "USD",
     method: "Payoneer",
     status: "To Do",
@@ -177,27 +67,50 @@ const mockPayouts: Payout_paypal[] = [
     isFlagged: false,
   },
   {
-    id: "PAY008",
-    businessSpaceId: "BS005",
+    id: "PAY001",
+    amount: 1500.00,
+    businessSpaceId: "BS001",
     company:"Muab",
-    userId: "USR005",
-    amount: 2500.00,
+    userId: "USR001",
     currency: "USD",
     method: "Payoneer",
-    status: "Done",
-    processingFee: 75.00,
-    netAmount: 2425.00,
+    status: "To Do",
+    processingFee: 45.00,
+    netAmount: 1455.00,
     requestDate: new Date(),
     monthlyPeriod: "January 2024",
-    bankDetails: "payoneer@example.com",
+    bankDetails: "paypal@example.com",
     isAutomated: true,
-    earningsId: "EARN002",
-    taxDeduction: 250.00,
+    earningsId: "EARN001",
+    taxDeduction: 150.00,
     complianceStatus: "Verified",
-    country: "Canada",
+    country: "United States",
     emailSent: true,
     isFlagged: false,
   },
+  {
+    id: "PAY001",
+    amount: 1500.00,
+    businessSpaceId: "BS001",
+    company:"Muab",
+    userId: "USR001",
+    currency: "USD",
+    method: "Payoneer",
+    status: "To Do",
+    processingFee: 45.00,
+    netAmount: 1455.00,
+    requestDate: new Date(),
+    monthlyPeriod: "January 2024",
+    bankDetails: "paypal@example.com",
+    isAutomated: true,
+    earningsId: "EARN001",
+    taxDeduction: 150.00,
+    complianceStatus: "Verified",
+    country: "United States",
+    emailSent: true,
+    isFlagged: false,
+  },
+
 ];
 
 const getStatusColor = (status: Payout_paypal["status"]) => {
@@ -247,7 +160,6 @@ export default function PayPalPayoutsPage() {
     return isMethodMatch && isStatusMatch && isAfterStart && isBeforeEnd;
   });
 
-  // Calculate pagination values
   const totalItems = filteredPayouts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -257,18 +169,15 @@ export default function PayPalPayoutsPage() {
     page * itemsPerPage
   );
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
      console.log (pageHistory,setDateRange,flaggedCount)
   }, [dateRange, selectedStatus]);
 
-  // Update useEffect to track viewed items
   useEffect(() => {
     const currentPageItems = paginatedPayouts.map(payout => payout.id);
     
     setPageHistory(prev => {
-      // Don't add duplicate pages
       if (prev.some(p => p.page === page && JSON.stringify(p.items) === JSON.stringify(currentPageItems))) {
         return prev;
       }
@@ -439,18 +348,19 @@ export default function PayPalPayoutsPage() {
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
-                <TableHead>Revenue ID</TableHead>
-                <TableHead>Revenue Report</TableHead>
-                <TableHead>Business Space</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead>Report/Payout ID</TableHead>
+                <TableHead>Total Amount</TableHead>
+                <TableHead>Payment Method</TableHead>
+                <TableHead>Country</TableHead>
+                {/* <TableHead>Method</TableHead> */}
+                <TableHead>Actions</TableHead>
+
+                {/* <TableHead>Category</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Request Date</TableHead>
                 <TableHead>Period</TableHead>
                 <TableHead>Compliance</TableHead>
-                <TableHead>Flag</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Flag</TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -465,13 +375,9 @@ export default function PayPalPayoutsPage() {
                       onCheckedChange={() => handleSelectRow(payout.id)}
                     />
                   </TableCell>
+                  
                   <TableCell className="font-medium">{payout.id}</TableCell>
-                  <TableCell>
-                    <Button variant="link" className="p-0">
-                      Download Report
-                    </Button>
-                  </TableCell>
-                  <TableCell>{payout.businessSpaceId}</TableCell>
+                  
                   <TableCell>
                     <div className="flex flex-col">
                       <span>${payout.amount.toFixed(2)}</span>
@@ -480,28 +386,36 @@ export default function PayPalPayoutsPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>{payout.method}</TableCell>
-                  <TableCell>{payout.company ? 'Company' : 'Creator'}</TableCell>
                   <TableCell>
+                    {payout.method}
+                  </TableCell>
+                  <TableCell>
+                    {payout.country}
+                  </TableCell>
+                  {/* <TableCell>
+                    {payout.businessSpaceId}
+                  </TableCell> */}
+                  {/* <TableCell>{payout.company ? 'Company' : 'Creator'}</TableCell> */}
+                  {/* <TableCell>
                     <Badge variant={getStatusColor(payout.status)}>
                       {payout.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell>{format(payout.requestDate, "MMM d, yyyy")}</TableCell>
-                  <TableCell>{payout.monthlyPeriod}</TableCell>
-                  <TableCell>
+                  </TableCell> */}
+                  {/* <TableCell>{format(payout.requestDate, "MMM d, yyyy")}</TableCell>
+                  <TableCell>{payout.monthlyPeriod}</TableCell> */}
+                  {/* <TableCell>
                     <Badge
                       variant={payout.complianceStatus === "Verified" ? "default" : "destructive"}
                     >
                       {payout.complianceStatus}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
+                  </TableCell> */}
+                  {/* <TableCell>
                     <PayoutFlagButton
                       isFlagged={payout.isFlagged}
                       onToggle={() => handleFlagToggle(payout.id)}
                     />
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <PayoutActions
                       payout={payout}
@@ -514,7 +428,6 @@ export default function PayPalPayoutsPage() {
               ))}
             </TableBody>
           </Table>
-
         </div>
 
         <div className="mt-4 flex items-center justify-center">
