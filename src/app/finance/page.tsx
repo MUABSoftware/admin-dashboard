@@ -300,11 +300,11 @@ export default function PayPalPayoutsPage() {
 
             {selectedRows.length > 0 && (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                {/* <DropdownMenuTrigger asChild>
                   <Button variant="outline">
                     Bulk Actions ({selectedRows.length})
                   </Button>
-                </DropdownMenuTrigger>
+                </DropdownMenuTrigger> */}
                 <DropdownMenuContent className="bg-white dark:bg-gray-800 shadow-lg border rounded-md z-50">
                   <DropdownMenuLabel className="font-semibold">Update Status</DropdownMenuLabel>
                   <DropdownMenuSeparator />
