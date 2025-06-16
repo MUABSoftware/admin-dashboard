@@ -332,7 +332,7 @@ function ProductsTables() {
       <Tabs defaultValue="sortedByDate" value={currentTab} onValueChange={tab => { setCurrentTab(tab); setCurrentPage(1); }}>
         <div className="flex justify-between gap-2 mb-4">
           <div>
-          <Button
+          {/* <Button
             className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'sortedByDate' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('sortedByDate');
@@ -342,7 +342,7 @@ function ProductsTables() {
           >
             <ArrowUpDown className=" h-4 w-4" />
             Sorted By Date
-          </Button>
+          </Button> */}
             
           <Button
             className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'all' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
