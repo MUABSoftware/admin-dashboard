@@ -103,7 +103,7 @@ interface Analytics {
   conversionRate: number; 
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 30;
 
 export function ProductsTable(){
   return <Provider store={store}>
@@ -117,56 +117,57 @@ function ProductsTables() {
   const [isConnectionDialogOpen, setIsConnectionDialogOpen] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [limit, setLimit] = useState(ITEMS_PER_PAGE);
+  const [totalPages, setTotalPages] = useState(1);
+  const [nextPage, setNextPage] = useState<number|null>(null);
+  const [previousPage, setPreviousPage] = useState<number|null>(null);
   const dispatch = useDispatch();
   const [sortOrder, setSortOrder] = useState("desc");
   const digitalProducts = useSelector((state: RootState) => state.businessProduct.products);
   
   useEffect(() => {
-    console.log("digitalProducts", digitalProducts);
     if(digitalProducts.length > 0){
       setProducts(digitalProducts);
     }
   }, [digitalProducts]);
 
+  const fetchData = async (page = 1, tab = currentTab, order = sortOrder) => {
+    try {
+      let statusParam = '';
+      if (tab === "approved") statusParam = "&status=active";
+      else if (tab === "rejected") statusParam = "&status=rejected";
+      else if (tab === "stopped") statusParam = "&status=stopped";
+      else if (tab === "in_review") statusParam = "&status=in_review";
+      const response = await request.get(`/product?page=${page}&limit=${ITEMS_PER_PAGE}&sortOrder=${order}${statusParam}`);
+      setProducts(response.data.data);
+      setTotalCount(response.data.totalCount);
+      setLimit(response.data.limit);
+      setTotalPages(response.data.totalPages);
+      setNextPage(response.data.nextPage);
+      setPreviousPage(response.data.previousPage);
+      dispatch(setDigitalProducts(response.data.data));
+    } catch (error) {
+      toast.error("Failed to fetch products");
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      console.log("fetching data");
-      try {
-        const sortOrder = "desc";
-        console.log("sortOrder", sortOrder);
-        const response = await request.get(`/product?sortOrder=${sortOrder}`);
-        console.log("response", response);
-        setProducts(response.data);
-        dispatch(setDigitalProducts(response.data));
-      } catch (error) {
-        console.error("Error fetching products:", error); 
-        toast.error("Failed to fetch products");
-      }
-    };
-    fetchData();
-  }, []);
+    fetchData(currentPage, currentTab, sortOrder);
+    // eslint-disable-next-line
+  }, [currentPage, currentTab, sortOrder]);
 
-  const filteredProducts = useMemo(() => {
-    if (currentTab === "approved") {
-      return products.filter(product => product.status === "active");
+  const handlePreviousPage = () => {
+    if (previousPage) {
+      setCurrentPage(previousPage);
     }
-    if (currentTab === "rejected") {
-      return products.filter(product => product.status === "rejected");
-    }
-    if (currentTab === "stopped") {
-      return products.filter(product => product.status === "stopped");
-    }
-    if (currentTab === "in_review") {
-      return products.filter(product => product.status === "in_review");
-    }
-    return products;
-  }, [currentTab, products]);
+  };
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const handleNextPage = () => {
+    if (nextPage) {
+      setCurrentPage(nextPage);
+    }
+  };
 
   const generateColumnsFromMongoDB = async (connectionString: string) => {
     console.log("connectionString", connectionString);
@@ -183,21 +184,9 @@ function ProductsTables() {
     }
   };
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(p => p - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(p => p + 1);
-    }
-  };
-
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      setSelectedProducts(paginatedProducts.map(product => product._id));
+      setSelectedProducts(products.map(product => product._id));
     } else {
       setSelectedProducts([]);
     }
@@ -324,7 +313,7 @@ function ProductsTables() {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="sortedByDate" value={currentTab} onValueChange={setCurrentTab}>
+      <Tabs defaultValue="sortedByDate" value={currentTab} onValueChange={tab => { setCurrentTab(tab); setCurrentPage(1); }}>
         <div className="flex justify-between gap-2 mb-4">
           <div>
           <Button
@@ -348,7 +337,7 @@ function ProductsTables() {
             variant={currentTab === 'all' ? 'default' : 'outline'}
           >
             <List className=" h-4 w-4" />
-            All Products {digitalProducts.length}
+            All Products {totalCount}
           </Button>
           <Button
             className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'approved' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
@@ -427,6 +416,13 @@ function ProductsTables() {
           )}
         </div>
 
+        {/* Showing X–Y of Z results */}
+        <div className="mb-2 text-sm text-gray-600">
+          {totalCount > 0 && (
+            <>Showing {(totalCount === 0 ? 0 : ((currentPage - 1) * limit + 1))}–{Math.min(currentPage * limit, totalCount)} of {totalCount} results</>
+          )}
+        </div>
+
         <div className="rounded-md border mt-4">
           <Table style={{ backgroundColor: '#fff' }}>
             <TableHeader>
@@ -435,15 +431,15 @@ function ProductsTables() {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={
-                        paginatedProducts.length > 0 &&
-                        paginatedProducts.every(product =>
+                        products.length > 0 &&
+                        products.every(product =>
                           selectedProducts.includes(product._id)
                         )
                       }
                       onChange={handleSelectAll}
                       indeterminate={
                         selectedProducts.length > 0 &&
-                        selectedProducts.length < paginatedProducts.length
+                        selectedProducts.length < products.length
                       }
                     />
                     ID
@@ -463,7 +459,7 @@ function ProductsTables() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedProducts.map((product) => (
+              {products.map((product) => (
                 <TableRow key={product._id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -508,37 +504,31 @@ function ProductsTables() {
 
         <Pagination className="mt-4">
           <PaginationContent>
-            <PaginationItem>
-              <Button
-                variant="ghost"
-                className="gap-1 pl-2.5"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              >
-                <PaginationPrevious className="h-4 me-2 w-4" />
-              </Button>
-            </PaginationItem>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  onClick={() => setCurrentPage(page)}
-                  isActive={currentPage === page}
+            {previousPage && (
+              <PaginationItem>
+                <Button
+                  variant="ghost"
+                  className="gap-1 pl-2.5"
+                  onClick={handlePreviousPage}
                 >
-                  {page}
-                </PaginationLink>
+                  <PaginationPrevious className="h-4 me-2 w-4" />
+                </Button>
               </PaginationItem>
-            ))}
+            )}
             <PaginationItem>
-              <Button
-                variant="ghost"
-                className="gap-1 pr-2.5"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                <PaginationNext className="h-4 w-4" />
-              </Button>
+              <span className="px-2 py-1 text-gray-700">Page {currentPage} of {totalPages}</span>
             </PaginationItem>
+            {nextPage && (
+              <PaginationItem>
+                <Button
+                  variant="ghost"
+                  className="gap-1 pr-2.5"
+                  onClick={handleNextPage}
+                >
+                  <PaginationNext className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+            )}
           </PaginationContent>
         </Pagination>
       </Tabs>

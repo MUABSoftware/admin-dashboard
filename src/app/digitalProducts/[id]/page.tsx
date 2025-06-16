@@ -135,8 +135,8 @@ export default function DigitalProductView() {
 
         // Fetch all products
         const allProductsResponse = await request.get('/product');
-        if (allProductsResponse.data) {
-          setProducts(allProductsResponse.data);
+        if (allProductsResponse.data && Array.isArray(allProductsResponse.data.data)) {
+          setProducts(allProductsResponse.data.data);
         }
 
       } catch (error) {
