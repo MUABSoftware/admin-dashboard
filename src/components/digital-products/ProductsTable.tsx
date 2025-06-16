@@ -311,12 +311,28 @@ function ProductsTables() {
     return `${firstThree}...${lastThree}`;
   };
 
+  const filteredProducts = useMemo(() => {
+    if (currentTab === "approved") {
+      return products.filter(product => product.status === "active");
+    }
+    if (currentTab === "rejected") {
+      return products.filter(product => product.status === "rejected");
+    }
+    if (currentTab === "stopped") {
+      return products.filter(product => product.status === "stopped");
+    }
+    if (currentTab === "in_review") {
+      return products.filter(product => product.status === "in_review");
+    }
+    return products;
+  }, [currentTab, products]);
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="sortedByDate" value={currentTab} onValueChange={tab => { setCurrentTab(tab); setCurrentPage(1); }}>
         <div className="flex justify-between gap-2 mb-4">
           <div>
-          <Button
+          {/* <Button
             className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'sortedByDate' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
             onClick={() => {
               setCurrentTab('sortedByDate');
@@ -326,7 +342,7 @@ function ProductsTables() {
           >
             <ArrowUpDown className=" h-4 w-4" />
             Sorted By Date
-          </Button>
+          </Button> */}
             
           <Button
             className={`bg-Table-Header-Color text-white me-2 rounded-md ${currentTab === 'all' ? 'bg-Table-Header-Color' : 'bg-blue-200'}`}
@@ -459,7 +475,7 @@ function ProductsTables() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <TableRow key={product._id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -486,7 +502,11 @@ function ProductsTables() {
                     </div> 
                   </TableCell>
                   <TableCell>{product.analytics.purchases}</TableCell>
-                  <TableCell> {product.creator}</TableCell>
+                  <TableCell>
+                    {typeof product.creator === 'object' && product.creator !== null
+                      ? ((product.creator as any).email || (product.creator as any)._id || JSON.stringify(product.creator))
+                      : product.creator}
+                  </TableCell>
                   <TableCell> --- </TableCell>
                   <TableCell>${product.price}</TableCell>
                   <TableCell>{product.status === "active" ? "Approved" : product.status === "rejected" ? "Rejected" : product.status === "in_review" ? "In Review" : "Stopped"}</TableCell>
